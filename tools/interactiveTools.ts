@@ -1,0 +1,12 @@
+import { MapPin, Layers3, Wind, Activity, Ruler, ClipboardList, Gauge, ArrowDownToLine } from "lucide-react";
+
+export const interactiveTools = [
+  { slug: "location-checker", title: "Location Risk Checker", category: "Location & preparedness", icon: MapPin, description: "Pick a town in the UK, Europe or the USA. See the nearest likely targets, fallout odds for each wind and a recommended shelter depth.", related: "/locations", relatedLabel: "Explore locations" },
+  { slug: "shelter-walkthrough", title: "Shelter Walkthrough", category: "Shelter engineering", icon: Layers3, description: "Explore a representative shelter cutaway, its rooms, depths and connected life-support systems.", related: "/engineering", relatedLabel: "Shelter engineering" },
+  { slug: "air-and-power", title: "Air & Power Simulator", category: "Life-support systems", icon: Wind, description: "Compare occupancy, ventilation, battery storage and fuel through a prolonged shelter stay.", related: "/technology", relatedLabel: "Life-support technology" },
+  { slug: "multi-threat", title: "Multi-Threat Simulator", category: "Preparedness scenarios", icon: Activity, description: "Follow pandemic, grid failure, chemical release and civil unrest scenarios over time.", related: "/survival", relatedLabel: "Survival & protection" },
+  { slug: "shelter-sizer", title: "Shelter Sizer", category: "Plan your shelter", icon: Ruler, description: "Turn your household, stay length and finish into a floor area, life-support sizing and an indicative budget.", related: "/payment-plans", relatedLabel: "Payment plans" },
+  { slug: "supplies-calculator", title: "Supplies Calculator", category: "Location & preparedness", icon: ClipboardList, description: "Water, food, medicine and kit for 3 days to a year, as a printable checklist.", related: "/preparedness-checklist", relatedLabel: "Preparedness checklist" },
+  { slug: "readiness-quiz", title: "Readiness Quiz", category: "Location & preparedness", icon: Gauge, description: "Ten questions give a readiness score, your weakest areas and the shelter that fits your household.", related: "/why-bunker", relatedLabel: "Why a bunker" },
+  { slug: "depth-explained", title: "Depth Explained", category: "Shelter engineering", icon: ArrowDownToLine, description: "Why 30, 50 and 100 metres: what each depth survives directly overhead and how earth stops fallout.", related: "/bunker-safety", relatedLabel: "Bunker safety" },
+] as const;

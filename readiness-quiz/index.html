@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Readiness Quiz</title>
+<meta name="description" content="Ten quick questions. Find out how ready your household is for a war, a long blackout or a pandemic, where you are weakest, and which Fortes shelter fits.">
+<meta property="og:title" content="Fortes Readiness Quiz">
+<meta property="og:description" content="Ten quick questions. Find out how ready your household is for a war, a long blackout or a pandemic, where you are weakest, and which Fortes shelter fits.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: brand frame; one question at a time with a progress bar, then a result page with score,
+   area bars, three next steps and a shelter recommendation. Single dark look by choice. */
+:root {
+  --ink: #0f1526;        /* page ground, Fortes navy */
+  --panel: #161d33;      /* raised surfaces */
+  --line: #2a3350;       /* hairlines */
+  --cream: #f3f0ea;      /* headline text */
+  --muted: #8f97ad;      /* secondary text */
+  --red: #ef4444;        /* Fortes red, the accent */
+  --amber: #f5a524;      /* warning state */
+  --green: #3ecf8e;      /* protected state */
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ink); color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 24px 40px; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: 56px; height: 56px; border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: var(--cream); }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(34px, 6vw, 68px); line-height: .95; margin: 18px 0 10px; text-wrap: balance; letter-spacing: -.01em; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 62ch; margin: 0 0 28px; font-size: 16px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.controls { display: grid; gap: 22px; }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 9px 10px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.row3 .chip { text-align: center; }
+input[type=range] { width: 100%; accent-color: var(--red); }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.btn { font-family: var(--f-display); text-transform: uppercase; font-size: 18px; letter-spacing: .04em; background: var(--red); color: var(--ink); border: 0; padding: 16px 18px; cursor: pointer; border-radius: 2px; width: 100%; }
+.btn:hover { filter: brightness(1.08); }
+
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+canvas#map { width: 100%; aspect-ratio: 16 / 10; max-width: 100%; display: block; background: #0b1020; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px 16px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(1px); }
+.legend span { color: var(--muted); }
+.legend b { font-family: var(--f-mono); font-weight: 600; margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 28px; }
+.readout > div { padding: 14px 16px 14px 0; min-width: 0; }
+.readout > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+.readout .v { font-family: var(--f-display); font-size: clamp(22px, 3vw, 30px); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 700px) { .readout { grid-template-columns: 1fr 1fr; } .readout > div:nth-child(3) { padding-left: 0; border-left: 0; } .readout > div:nth-child(n+3) { border-top: 1px solid var(--line); } }
+
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; }
+.compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card.fortes { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.card.fortes h3 { color: var(--red); }
+.verdict { font-family: var(--f-display); font-size: 26px; text-transform: uppercase; line-height: 1; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; padding: 5px 9px; border: 1px solid currentColor; width: fit-content; }
+.pill::before { content: ""; width: 7px; height: 7px; background: currentColor; }
+.st-fatal { color: var(--red); } .st-severe { color: var(--amber); } .st-injury { color: #e8d36a; } .st-safe { color: var(--green); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li span { color: var(--muted); }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.section-svg { width: 100%; height: auto; max-width: 100%; }
+
+.timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .timeline { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .timeline { grid-template-columns: 1fr; } }
+.tl { border-top: 2px solid var(--line); padding-top: 10px; min-width: 0; }
+.tl.hot { border-top-color: var(--red); }
+.tl .t { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--cream); font-variant-numeric: tabular-nums; }
+.tl p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); letter-spacing: .02em; display: flex; align-items: baseline; gap: 12px; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.quiz { max-width: 760px; }
+.qhead { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .1em; margin-bottom: 8px; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar div { height: 100%; background: var(--red); transition: width .25s; }
+.q { font-family: var(--f-display); text-transform: uppercase; font-size: clamp(24px, 4vw, 36px); line-height: 1.05; margin: 26px 0 8px; }
+.qsub { color: var(--muted); margin: 0 0 18px; }
+.answers { display: grid; gap: 8px; }
+.answers .chip { padding: 14px 16px; font-size: 15px; }
+.nav { display: flex; justify-content: space-between; margin-top: 18px; }
+.ghost { font: 600 12px var(--f-mono); letter-spacing: .08em; color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 11px 14px; cursor: pointer; border-radius: 2px; text-transform: uppercase; }
+.ghost:hover { border-color: var(--muted); }
+.ghost:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.ghost[disabled] { opacity: .35; cursor: default; }
+.result { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 32px; align-items: start; }
+@media (max-width: 760px) { .result { grid-template-columns: minmax(0, 1fr); } }
+.score { font-family: var(--f-display); font-size: clamp(80px, 14vw, 140px); line-height: .85; font-variant-numeric: tabular-nums; }
+.score small { font-size: .3em; color: var(--muted); }
+.verdict2 { font-family: var(--f-display); font-size: 30px; text-transform: uppercase; margin: 12px 0 8px; }
+.result p { color: var(--muted); margin: 0 0 10px; }
+.areas { display: grid; gap: 10px; }
+.area { display: grid; grid-template-columns: 90px minmax(0, 1fr) 44px; gap: 10px; align-items: center; font-size: 14px; }
+.area .t { height: 10px; background: var(--line); border-radius: 0 4px 4px 0; }
+.area .t div { height: 100%; background: #3987e5; border-radius: 0 4px 4px 0; }
+.area b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.area span { color: var(--muted); }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .steps { grid-template-columns: minmax(0, 1fr); } }
+.steps .card a { color: var(--cream); font-family: var(--f-mono); font-weight: 600; font-size: 13px; text-decoration: none; border-bottom: 1px solid var(--red); width: fit-content; }
+.rec { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.rec > div { padding: 14px 16px 14px 0; }
+.rec > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
+.rec .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+.rec .v { font-family: var(--f-display); font-size: 26px; margin-top: 4px; }
+.rec .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 640px) { .rec { grid-template-columns: 1fr; } .rec > div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); } }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.actions > * { display: inline-flex; align-items: center; }
+.actions .btn { width: auto; font-size: 15px; padding: 13px 16px; text-decoration: none; }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
+</style>
+
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Readiness quiz</div>
+    <a class="site" href="../index.html">← ALL FORTES TOOLS</a>
+  </div>
+  <h1>How ready <em>are you?</em></h1>
+  <p class="lede">Ten quick questions about where you live, what you have stored and what your plan is. Get a readiness score, your weakest areas, and the shelter that fits your household. Nothing you answer leaves this page.</p>
+
+  <section class="quiz" id="quiz">
+    <div class="qhead"><span id="qnum"></span><span id="qarea"></span></div>
+    <div class="bar"><div id="bar"></div></div>
+    <div class="q" id="q"></div>
+    <p class="qsub" id="qsub"></p>
+    <div class="answers" id="answers" role="radiogroup"></div>
+    <div class="nav"><button class="ghost" id="back">← Back</button></div>
+  </section>
+
+  <section id="result" hidden>
+    <div class="result">
+      <div>
+        <div class="label">Your readiness</div>
+        <div class="score" id="score"></div>
+        <div class="pill" id="pill"></div>
+        <div class="verdict2" id="verdict"></div>
+        <p id="vtext"></p>
+      </div>
+      <div>
+        <div class="label">By area</div>
+        <div class="areas" id="areas"></div>
+      </div>
+    </div>
+
+    <h2>Your three next steps</h2>
+    <div class="steps" id="steps"></div>
+
+    <h2>The Fortes shelter that fits</h2>
+    <div class="rec" id="rec"></div>
+    <div class="actions">
+      <a class="btn" href="https://fortesbunkers.com" target="_blank" rel="noopener">Book a consultation</a>
+      <a class="ghost" href="../shelter-sizer/index.html" style="text-decoration:none">Size it in detail</a>
+      <button class="ghost" id="share">Copy my result</button>
+      <button class="ghost" id="again">Take it again</button>
+    </div>
+  </section>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="../index.html">Home</a><a href="../ww3-simulator/index.html">WW3</a><a href="../nuclear-simulator/index.html">Nuclear</a><a href="../blast-simulator/index.html">Blast</a><a href="../threat-simulator/index.html">Threats</a><a href="../shelter-walkthrough/index.html">Walkthrough</a><a href="../depth-explained/index.html">Depth</a><a href="../air-power-simulator/index.html">Air and power</a><a href="../shelter-sizer/index.html">Sizer</a><a href="../supplies-calculator/index.html">Supplies</a><a href="../readiness-quiz/index.html" aria-current="page">Quiz</a><a href="../location-checker/index.html">Location</a></nav>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Close the gaps → <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">A self-assessment for education, not a professional survey. Scores weight water, food, power, shelter, time to shelter, health and planning equally. Location affects the recommended depth, not your score. Your answers stay in this browser.</p>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  // [area, question, sub, [[answer, points 0-4], ...]]. Area "loc" and "who" are not scored.
+  const QS = [
+    ["loc", "Where do you live?", "Distance from likely targets decides how deep a shelter needs to be.", [["City centre", 0], ["Suburbs of a city", 1], ["Near a military base, port or refinery", 0], ["Small town", 2], ["Countryside, far from targets", 3]]],
+    ["water", "How much drinking water do you have stored?", "Taps can stop within days of a power cut.", [["None", 0], ["A few bottles", 1], ["About 3 days' worth", 2], ["About 2 weeks", 3], ["A month or more", 4]]],
+    ["food", "How long could you eat from what is in the house?", "Supermarkets hold only a few days of stock.", [["A couple of days", 0], ["About a week", 1], ["Two weeks", 2], ["One to three months", 3], ["Six months or more", 4]]],
+    ["power", "If the power went off for a week, what would you do?", "", [["We would be stuck", 0], ["Torches and batteries", 1], ["Camping stove and power banks", 2], ["A generator and fuel", 3], ["Independent power that runs for weeks", 4]]],
+    ["shelter", "A nuclear warning sounds. Where do you go?", "", [["I don't know", 0], ["Stay in the house", 1], ["A cellar or basement", 2], ["A shelter we would have to drive to", 2], ["A shelter on our own property", 4]]],
+    ["time", "How fast could everyone be in that place?", "Missiles can arrive 10 to 15 minutes after launch.", [["Over an hour", 0], ["30 to 60 minutes", 1], ["15 to 30 minutes", 2], ["Under 15 minutes", 4]]],
+    ["shelter", "Could you breathe safely if the air outside was contaminated?", "Fallout dust, smoke or a chemical release.", [["No", 0], ["Tape and plastic sheeting on a room", 1], ["FFP3 masks for everyone", 2], ["A sealed shelter with filtered air", 4]]],
+    ["health", "Medicines and first aid?", "", [["Nothing in particular", 0], ["A basic first aid kit", 1], ["A good kit and someone trained", 2], ["Kit, training and 3+ months of medicines", 4]]],
+    ["plan", "Does your household have a plan?", "", [["No", 0], ["We would phone each other", 1], ["We have a meeting point", 2], ["A written plan, a radio and a meeting point", 4]]],
+    ["who", "Who would you be sheltering?", "This sizes the shelter we recommend.", [["Just me or a couple", 2], ["A family of 3 to 5", 5], ["A family of 6 to 8", 8], ["Extended family, 9 or more", 12]]],
+  ];
+  const AREAS = { water: "Water", food: "Food", power: "Power", shelter: "Shelter", time: "Time", health: "Health", plan: "Plan" };
+  const STEPS = {
+    water: ["Store water", "Aim for at least 2 weeks: about 4 litres per person per day, in sealed containers.", "../supplies-calculator/index.html", "Supplies calculator"],
+    food: ["Build a food store", "Long-life food your household actually eats, rotated before it expires.", "../supplies-calculator/index.html", "Supplies calculator"],
+    power: ["Plan for no power", "Light, cooking, a radio and a way to keep phones charged for weeks.", "../air-power-simulator/index.html", "Air and power simulator"],
+    shelter: ["Know where you would shelter", "A house cuts fallout radiation only about 3 times. Deep earth cuts it more than 100,000 times.", "../shelter-walkthrough/index.html", "Shelter walkthrough"],
+    time: ["Cut the time to shelter", "A shelter you can reach in under 15 minutes is the only one that helps in a missile attack.", "../location-checker/index.html", "Location checker"],
+    health: ["Cover medical needs", "A good first aid kit, someone trained, and a longer supply of any prescription medicines.", "../supplies-calculator/index.html", "Supplies calculator"],
+    plan: ["Write the plan down", "Where you meet, who collects whom, and how you get news when phones are down.", "../threat-simulator/index.html", "Threat simulator"],
+  };
+  const DEPTH = [100, 50, 100, 50, 30], DEPTH_WHY = ["You live in a likely target area", "A city is close by", "A military or industrial target is close", "Targets are some distance away", "You are far from likely targets"];
+  let i = 0, ans = new Array(QS.length).fill(null);
+
+  function show() {
+    const [area, q, sub, opts] = QS[i];
+    $("qnum").textContent = `QUESTION ${i + 1} OF ${QS.length}`;
+    $("qarea").textContent = (AREAS[area] || (area === "loc" ? "Location" : "Household")).toUpperCase();
+    $("bar").style.width = (100 * i / QS.length) + "%";
+    $("q").textContent = q; $("qsub").textContent = sub; $("qsub").hidden = !sub;
+    $("answers").innerHTML = "";
+    opts.forEach(([t], k) => {
+      const b = document.createElement("button"); b.className = "chip"; b.textContent = t; b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", ans[i] === k); b.setAttribute("aria-pressed", ans[i] === k);
+      b.onclick = () => { ans[i] = k; if (i < QS.length - 1) { i++; show(); } else finish(); };
+      $("answers").appendChild(b);
+    });
+    $("back").disabled = i === 0;
+    const first = $("answers").querySelector(".chip"); if (first && i > 0) first.focus({ preventScroll: true });
+  }
+
+  function finish() {
+    $("quiz").hidden = true; $("result").hidden = false; $("bar").style.width = "100%";
+    const by = {};
+    QS.forEach(([area, , , opts], k) => { if (!AREAS[area]) return; (by[area] = by[area] || []).push(opts[ans[k]][1] / 4); });
+    const areaPct = Object.fromEntries(Object.entries(by).map(([a, v]) => [a, 100 * v.reduce((s, x) => s + x, 0) / v.length]));
+    const score = Math.round(Object.values(areaPct).reduce((s, x) => s + x, 0) / Object.keys(areaPct).length);
+    const [verdict, cls, text] = score < 30 ? ["Exposed", "st-fatal", "Most households are here. Without stored water, food and a place to go, you would depend on services that stop working in the first days of a crisis."]
+      : score < 55 ? ["Underprepared", "st-severe", "You have made a start. A few days of supplies help in a storm or a short blackout, but not in a war, a long grid failure or a fallout event."]
+      : score < 80 ? ["Partly ready", "st-injury", "You would cope better than most for the first weeks. The gaps are where you would shelter, how fast you could get there and what you would breathe."]
+      : ["Well prepared", "st-safe", "You have supplies, a plan and somewhere to go. The question now is whether that place would survive a strike nearby and keep you sealed in for months."];
+    $("score").innerHTML = `${score}<small>/100</small>`;
+    $("pill").className = "pill " + cls; $("pill").textContent = verdict;
+    $("verdict").textContent = verdict; $("vtext").textContent = text;
+    $("areas").innerHTML = Object.entries(areaPct).map(([a, v]) => `<div class="area"><span>${AREAS[a]}</span><div class="t" title="${AREAS[a]}: ${Math.round(v)}%"><div style="width:${Math.max(v, 1.5)}%"></div></div><b>${Math.round(v)}%</b></div>`).join("");
+    const weak = Object.entries(areaPct).sort((a, b) => a[1] - b[1]).slice(0, 3);
+    $("steps").innerHTML = weak.map(([a]) => { const [t, p, href, tool] = STEPS[a]; return `<div class="card"><h3>${AREAS[a]} · ${Math.round(areaPct[a])}%</h3><div class="verdict" style="font-size:22px">${t}</div><p>${p}</p><a href="${href}">${tool} →</a></div>`; }).join("");
+    const loc = ans[0], people = QS[9][3][ans[9]][1];
+    const tier = people <= 2 ? ["Compact", "80 m², up to 4 people"] : people <= 5 ? ["Family", "160 m², up to 8 people"] : people <= 8 ? ["Family plus", "240 m², up to 12 people"] : ["Estate", "320 m²+, 12 people or more"];
+    $("rec").innerHTML = [["Shelter", tier[0], tier[1]], ["Depth", DEPTH[loc] + " m", DEPTH_WHY[loc]], ["Stocked for", "12+ months", "Air, water, power, food and medical"]]
+      .map(([k, v, s]) => `<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+    $("share").onclick = async () => {
+      const txt = `My Fortes readiness score: ${score}/100 (${verdict}). Weakest: ${weak.map(w => AREAS[w[0]]).join(", ")}.`;
+      try { await navigator.clipboard.writeText(txt); $("share").textContent = "Copied"; } catch { $("share").textContent = "Copy failed"; }
+      setTimeout(() => $("share").textContent = "Copy my result", 1800);
+    };
+    window.scrollTo({ top: $("result").offsetTop - 20, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+
+  $("back").onclick = () => { if (i > 0) { i--; show(); } };
+  $("again").onclick = () => { ans.fill(null); i = 0; $("result").hidden = true; $("quiz").hidden = false; show(); };
+  show();
+})();
+</script>
+</body>
+</html>

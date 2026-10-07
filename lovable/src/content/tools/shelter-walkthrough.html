@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Shelter Walkthrough</title>
+<meta name="description" content="A clickable cutaway of a Fortes underground shelter at 30, 50 or 100 metres. Open each room, follow the air, water and power systems, and test the depth against a direct hit.">
+<meta property="og:title" content="Fortes Shelter Walkthrough">
+<meta property="og:description" content="A clickable cutaway of a Fortes underground shelter at 30, 50 or 100 metres. Open each room, follow the air, water and power systems, and test the depth against a direct hit.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/simulators/og/shelter-walkthrough.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: brand frame; controls and room list left, SVG cutaway right with the room detail under it;
+   depth readout and spec table below. Single dark look by choice, matching the other simulators. */
+:root {
+  --ink: #0f1526;        /* page ground, Fortes navy */
+  --panel: #161d33;      /* raised surfaces */
+  --line: #2a3350;       /* hairlines */
+  --cream: #f3f0ea;      /* headline text */
+  --muted: #8f97ad;      /* secondary text */
+  --red: #ef4444;        /* Fortes red, the accent */
+  --amber: #f5a524;      /* warning state */
+  --green: #3ecf8e;      /* protected state */
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ink); color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 24px 40px; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: 56px; height: 56px; border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: var(--cream); }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(34px, 6vw, 68px); line-height: .95; margin: 18px 0 10px; text-wrap: balance; letter-spacing: -.01em; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 62ch; margin: 0 0 28px; font-size: 16px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.controls { display: grid; gap: 22px; }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 9px 10px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.row3 .chip { text-align: center; }
+input[type=range] { width: 100%; accent-color: var(--red); }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.btn { font-family: var(--f-display); text-transform: uppercase; font-size: 18px; letter-spacing: .04em; background: var(--red); color: var(--ink); border: 0; padding: 16px 18px; cursor: pointer; border-radius: 2px; width: 100%; }
+.btn:hover { filter: brightness(1.08); }
+
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+canvas#map { width: 100%; aspect-ratio: 16 / 10; max-width: 100%; display: block; background: #0b1020; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px 16px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(1px); }
+.legend span { color: var(--muted); }
+.legend b { font-family: var(--f-mono); font-weight: 600; margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 28px; }
+.readout > div { padding: 14px 16px 14px 0; min-width: 0; }
+.readout > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+.readout .v { font-family: var(--f-display); font-size: clamp(22px, 3vw, 30px); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 700px) { .readout { grid-template-columns: 1fr 1fr; } .readout > div:nth-child(3) { padding-left: 0; border-left: 0; } .readout > div:nth-child(n+3) { border-top: 1px solid var(--line); } }
+
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; }
+.compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card.fortes { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.card.fortes h3 { color: var(--red); }
+.verdict { font-family: var(--f-display); font-size: 26px; text-transform: uppercase; line-height: 1; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; padding: 5px 9px; border: 1px solid currentColor; width: fit-content; }
+.pill::before { content: ""; width: 7px; height: 7px; background: currentColor; }
+.st-fatal { color: var(--red); } .st-severe { color: var(--amber); } .st-injury { color: #e8d36a; } .st-safe { color: var(--green); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li span { color: var(--muted); }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.section-svg { width: 100%; height: auto; max-width: 100%; }
+
+.timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .timeline { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .timeline { grid-template-columns: 1fr; } }
+.tl { border-top: 2px solid var(--line); padding-top: 10px; min-width: 0; }
+.tl.hot { border-top-color: var(--red); }
+.tl .t { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--cream); font-variant-numeric: tabular-nums; }
+.tl p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); letter-spacing: .02em; display: flex; align-items: baseline; gap: 12px; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.grid { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.rooms .chip { padding: 7px 9px; font-size: 12.5px; }
+.sys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.sys .chip { text-align: center; }
+.sys .chip i { display: inline-block; width: 8px; height: 8px; margin-right: 6px; transform: translateY(-1px); }
+#cut { width: 100%; height: auto; display: block; background: #0b1020; user-select: none; }
+#cut .room { cursor: pointer; }
+#cut .room rect.hit { fill: #1b2340; stroke: #2a3350; stroke-width: 1.5; transition: fill .15s; }
+#cut .room:hover rect.hit { fill: #222c4f; }
+#cut .room.on rect.hit { fill: color-mix(in srgb, #ef4444 22%, #1b2340); stroke: #ef4444; stroke-width: 2.5; }
+#cut .room:focus { outline: none; }
+#cut .room:focus-visible rect.hit { stroke: #f3f0ea; stroke-width: 2.5; }
+#cut text { font-family: "JetBrains Mono", monospace; font-weight: 600; }
+#cut .rl { fill: #f3f0ea; font-size: 12px; letter-spacing: .06em; pointer-events: none; }
+#cut .ax { fill: #8f97ad; font-size: 11px; }
+#cut .furn { fill: none; stroke: #4a5578; stroke-width: 1.5; pointer-events: none; }
+#cut .furnf { fill: #2e3859; pointer-events: none; }
+.flow { fill: none; stroke-width: 3; stroke-dasharray: 8 8; animation: flow 1.2s linear infinite; pointer-events: none; }
+@keyframes flow { to { stroke-dashoffset: -32; } }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+.detail { border-top: 1px solid var(--line); padding-top: 14px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 28px; }
+@media (max-width: 700px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+.detail h3 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: 24px; line-height: 1; margin: 6px 0 8px; }
+.detail .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+.detail p { margin: 0 0 10px; color: var(--muted); }
+.detail ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.detail li { display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 6px; }
+.detail li span { color: var(--muted); }
+.detail li b { font-family: var(--f-mono); font-weight: 600; text-align: right; }
+.detail .em { border-left: 2px solid var(--red); padding-left: 10px; color: var(--cream); font-size: 14px; margin-top: 10px; }
+.verdict-line { font-family: var(--f-mono); font-size: 12px; font-weight: 600; margin-top: 8px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th, .tbl td { text-align: left; padding: 8px 10px 8px 0; border-top: 1px solid var(--line); }
+.tbl th { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--red); font-weight: 600; }
+.tbl td { font-family: var(--f-mono); color: var(--cream); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl td:first-child { font-family: var(--f-body); color: var(--muted); }
+.tbl tr.on td { background: color-mix(in srgb, var(--red) 8%, transparent); }
+.scroll { overflow-x: auto; }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
+</style>
+
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Shelter walkthrough</div>
+    <a class="site" href="/simulators">← ALL FORTES TOOLS</a>
+  </div>
+  <h1>Step inside. <em>Go down.</em></h1>
+  <p class="lede">A cutaway of a Fortes shelter. Pick a depth, open any room, and switch on the air, water and power systems to see how the shelter keeps people alive while it is sealed.</p>
+
+  <div class="grid">
+    <div class="controls">
+      <div>
+        <div class="label">Shelter depth</div>
+        <div class="row3" id="depthChips" role="group" aria-label="Shelter depth"></div>
+      </div>
+      <div>
+        <div class="label">Show systems</div>
+        <div class="sys" id="sysChips" role="group" aria-label="Systems"></div>
+      </div>
+      <div>
+        <div class="label"><span>Direct-hit test</span><output id="ktOut"></output></div>
+        <input type="range" id="kt" min="0" max="1000" aria-label="Yield of a ground burst directly overhead">
+        <div class="hint">A ground burst directly overhead. The dashed bowl is the damage zone: twice the crater depth.</div>
+        <div class="verdict-line" id="hitVerdict"></div>
+      </div>
+      <div>
+        <div class="label">Rooms</div>
+        <div class="rooms" id="roomChips" role="group" aria-label="Rooms"></div>
+      </div>
+    </div>
+
+    <div class="mapwrap">
+      <div class="maphead"><span id="cutTitle"></span><span>Click a room</span></div>
+      <svg id="cut" viewBox="0 0 1000 720" role="img" aria-label="Cutaway of a Fortes underground shelter"></svg>
+      <div class="detail" id="detail" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="readout">
+    <div><div class="k">Earth above you</div><div class="v" id="r-over"></div><div class="s" id="r-over-s"></div></div>
+    <div><div class="k">Direct hit survived to</div><div class="v" id="r-kill"></div><div class="s">ground burst directly overhead</div></div>
+    <div><div class="k">Lift to the habitat</div><div class="v" id="r-lift"></div><div class="s" id="r-lift-s"></div></div>
+    <div><div class="k">Fallout protection</div><div class="v">&gt; 100,000×</div><div class="s">radiation halves every 10 cm of earth</div></div>
+  </div>
+
+  <h2>Three depths compared</h2>
+  <div class="scroll"><table class="tbl" id="depthTable"></table></div>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="/simulators">Home</a><a href="/simulators/ww3-scenario">WW3</a><a href="/simulators/nuclear-fallout">Nuclear</a><a href="/simulators/blast-impact">Blast</a><a href="/simulators/multi-threat">Threats</a><a href="/simulators/shelter-walkthrough" aria-current="page">Walkthrough</a><a href="/simulators/depth-explained">Depth</a><a href="/simulators/air-and-power">Air and power</a><a href="/simulators/shelter-sizer">Sizer</a><a href="/simulators/supplies-calculator">Supplies</a><a href="/simulators/readiness-quiz">Quiz</a><a href="/simulators/location-checker">Location</a></nav>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Book a confidential walkthrough → <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Illustrative layout. Every Fortes shelter is designed to the site, the household and the client's brief, so room sizes, equipment and capacities vary. The depth axis is drawn to scale between the surface and the top of the habitat; the habitat itself is not. Direct-hit survival uses Glasstone &amp; Dolan crater scaling and treats twice the crater depth as the damage zone, the same model as the other Fortes simulators. Figures are illustrative, not a Fortes guarantee.</p>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const DEPTHS = [30, 50, 100];
+  const S = { depth: 50, kt: 15, room: "airlock", sys: { air: true, water: false, power: false } };
+
+  // Geometry of the drawing (viewBox units). Depth is to scale between SURF and HAB_TOP.
+  const SURF = 120, HAB_TOP = 430, HAB_BOT = 660, X0 = 140, X1 = 940;
+  const dmgDepth = kt => 18 * Math.pow(kt, 0.294);            // m, twice the crater depth
+  const killKt = d => Math.pow(d / 18, 1 / 0.294);
+  const killLabel = d => { const k = killKt(d); return (k < 10 ? Math.round(k) : Math.round(k / 5) * 5) + " kt"; };
+  const fmtKt = kt => kt >= 1000 ? (kt / 1000).toFixed(1).replace(/\.0$/, "") + " Mt" : (kt >= 10 ? Math.round(kt) : kt.toFixed(1)) + " kt";
+  const fmtT = s => s < 60 ? Math.round(s) + " s" : Math.floor(s / 60) + " min " + String(Math.round(s % 60)).padStart(2, "0") + " s";
+
+  // ================= rooms =================
+  // [id, label, x, y, w, h, title, summary, specs, emergency]
+  const ROOMS = [
+    ["entrance", "ENTRANCE", 110, 52, 150, 68, "Surface entrance", "A low outbuilding that looks like a garage or barn. Inside is an armoured door, the lift and the stairs down.",
+      [["Door", "Armoured, keypad + key"], ["Cameras", "Perimeter CCTV"], ["Look", "Disguised outbuilding"]], "Members head straight here when an alert sounds. The door closes behind the last person in."],
+    ["shaft", "SHAFT", 170, SURF, 60, HAB_TOP - SURF, "Lift and stair shaft", "A reinforced concrete shaft runs straight down to the habitat. The lift is the fast way down; the stairs work with no power at all.",
+      [["Lift", "≈ 1 m/s"], ["Stairs", "Switchback, lit"], ["Lining", "Reinforced concrete"]], "If the power fails during an alert, the stairs still get everyone down."],
+    ["airlock", "BLAST DOOR", X0 + 10, 440, 100, 100, "Blast doors and decontamination", "Two blast doors with a small room between them. Anyone coming in from outside showers here and leaves their outer clothes behind, so fallout dust never reaches the living areas.",
+      [["Doors", "Two, in series"], ["Shower", "Decontamination"], ["Check", "Radiation meter"]], "Only one blast door is ever open at a time. Contaminated clothing is bagged and stays in the airlock."],
+    ["command", "COMMAND", 255, 440, 120, 100, "Command and comms", "The shelter's control room. Screens show outside radiation, cameras and the state of air, water and power.",
+      [["Outside", "Radiation monitors"], ["Radio", "HF + satellite messenger"], ["Control", "Air, power, water panel"]], "This is how members know when the dose rate outside has dropped enough for a short trip up."],
+    ["living", "LIVING", 380, 440, 200, 100, "Living and dining", "The shared space: a table for everyone, sofas, books, screens and room to exercise. Lighting follows a day and night cycle to keep sleep normal.",
+      [["Lighting", "Day/night cycle"], ["Use", "Meals, films, school"], ["Exercise", "Bike + mats"]], "Months underground are hard on morale. Routine, daylight-spectrum light and a shared table matter."],
+    ["kitchen", "KITCHEN", 585, 440, 95, 100, "Kitchen", "Electric cooking, freezers and a water supply from the shelter's own tanks. The menu is built from the long-life stores below.",
+      [["Cooking", "Induction + oven"], ["Cold", "Fridge + chest freezer"], ["Water", "From shelter tanks"]], "Cooking runs off the shelter's power. Food stores are planned for 12+ months for every member."],
+    ["beds", "BEDROOMS", 685, 440, 145, 100, "Bedrooms", "Private family rooms and bunk rooms, with quiet ventilation and blackout for sleep.",
+      [["Rooms", "Family + bunk rooms"], ["Air", "Fresh, filtered supply"], ["Storage", "Under-bunk lockers"]], "Your own door and your own bed make a long stay possible."],
+    ["medical", "MEDICAL", 835, 440, 95, 100, "Medical bay", "A treatment room with a trauma kit, a year of medicines and an isolation bed.",
+      [["Kit", "Trauma + first aid"], ["Radiation", "Potassium iodide"], ["Isolation", "One bed"]], "Hospitals will be overwhelmed or gone. This room treats injuries and illness until help is possible."],
+    ["plant", "AIR PLANT", X0 + 10, 550, 180, 100, "Air and filtration plant", "Outside air comes down a hardened intake through a blast valve, then through a pre-filter, a HEPA filter for fallout dust and activated carbon for chemicals. A fan keeps the shelter at a slight overpressure so nothing leaks in.",
+      [["Blast valves", "Close in milliseconds"], ["Filters", "Pre, HEPA, carbon"], ["Pressure", "Slight overpressure"], ["Backup", "Hand-crank fan"]], "During the first hours of heavy fallout the intake can be closed and the air recirculated through a CO₂ scrubber. See the air and power simulator."],
+    ["power", "POWER", 335, 550, 180, 100, "Power", "A battery bank carries the shelter day to day. Two diesel generators, one a spare, recharge it, exhausting through their own mast.",
+      [["Storage", "Battery bank"], ["Generators", "Two, redundant"], ["Fuel", "Sized for 12+ months"]], "The grid fails at the first strike. Power is managed: lights, air and water first."],
+    ["water", "WATER", 520, 550, 160, 100, "Water", "A private borehole plus stored water in tanks, filtered and UV-treated. Grey water is recycled for flushing.",
+      [["Source", "Borehole + tanks"], ["Treatment", "Filter + UV"], ["Reuse", "Grey water"]], "Mains water stops when the pumps lose power. The borehole draws from deep groundwater that fallout does not reach for years."],
+    ["stores", "STORES", 685, 550, 245, 100, "Stores", "Long-life food, spare filters, parts, tools, clothing and hygiene supplies, racked and rotated.",
+      [["Food", "12+ months per member"], ["Spares", "Filters, pumps, parts"], ["Other", "Clothes, hygiene, tools"]], "Nobody should have to go out for supplies while the land above recovers."],
+    ["escape", "EXIT", 900, SURF, 32, HAB_TOP - SURF - 4, "Emergency exit", "A separate escape shaft with a ladder to a hidden hatch away from the main entrance.",
+      [["Route", "Separate shaft"], ["Climb", "Ladder"], ["Hatch", "Hidden, opens from below"]], "If debris blocks the main entrance, members can still get out."],
+  ];
+
+  const svg = $("cut");
+  const el = (tag, attrs = {}, parent = svg) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
+
+  function build() {
+    svg.innerHTML = "";
+    const d = S.depth, pxPerM = (HAB_TOP - SURF) / d;
+    const defs = el("defs");
+    const pat = el("pattern", { id: "rock", width: 18, height: 18, patternUnits: "userSpaceOnUse", patternTransform: "rotate(35)" }, defs);
+    el("rect", { width: 18, height: 18, fill: "#121a2e" }, pat); el("line", { x1: 0, y1: 0, x2: 0, y2: 18, stroke: "#1d2742", "stroke-width": 3 }, pat);
+
+    // sky and ground layers
+    el("rect", { x: 0, y: 0, width: 1000, height: SURF, fill: "#0b1020" });
+    const soil = Math.min(2 * pxPerM, 16), clay = Math.min(12 * pxPerM, 110);
+    el("rect", { x: 0, y: SURF, width: 1000, height: soil, fill: "#3a2e24" });
+    el("rect", { x: 0, y: SURF + soil, width: 1000, height: clay, fill: "#241f22" });
+    el("rect", { x: 0, y: SURF + soil + clay, width: 1000, height: 720 - SURF - soil - clay, fill: "url(#rock)" });
+    el("line", { x1: 0, y1: SURF, x2: 1000, y2: SURF, stroke: "#5b6b45", "stroke-width": 3 });
+    // trees
+    [[330, 1], [400, .8], [620, 1.1], [700, .9], [770, 1]].forEach(([x, s]) => { el("rect", { x: x - 2, y: SURF - 14 * s, width: 4, height: 14 * s, fill: "#3a2e24" }); el("circle", { cx: x, cy: SURF - 22 * s, r: 12 * s, fill: "#22382a" }); });
+    // masts
+    const mast = (x, label) => { el("rect", { x: x - 4, y: SURF - 34, width: 8, height: 34, fill: "#4a5578" }); el("path", { d: `M${x - 14} ${SURF - 34} Q${x} ${SURF - 50} ${x + 14} ${SURF - 34}Z`, fill: "#4a5578" }); el("text", { x, y: SURF - 56, class: "ax", "text-anchor": "middle" }).textContent = label; };
+    mast(300, "AIR IN"); mast(520, "EXHAUST");
+    // intake and exhaust ducts down to plant
+    el("rect", { x: 297, y: SURF, width: 6, height: HAB_TOP - SURF, fill: "#2e3859" });
+    el("rect", { x: 517, y: SURF, width: 6, height: HAB_TOP - SURF, fill: "#2e3859" });
+
+    // ruler
+    const step = d <= 30 ? 5 : d <= 50 ? 10 : 20;
+    el("line", { x1: 60, y1: SURF, x2: 60, y2: HAB_TOP, stroke: "#8f97ad", "stroke-width": 1.5 });
+    for (let m = 0; m <= d; m += step) {
+      const y = SURF + m * pxPerM;
+      el("line", { x1: 54, y1: y, x2: 66, y2: y, stroke: "#8f97ad", "stroke-width": 1.5 });
+      el("text", { x: 48, y: y + 4, class: "ax", "text-anchor": "end" }).textContent = m + " m";
+    }
+    el("text", { x: 20, y: 100, class: "ax" }).textContent = "DEPTH";
+
+    // direct-hit damage bowl, centred over the habitat
+    const dd = dmgDepth(S.kt), bowlY = Math.min(dd * pxPerM, 700 - SURF), bowlW = Math.min(Math.max(bowlY * 1.6, 60), 480);
+    el("path", { d: `M${540 - bowlW} ${SURF} Q540 ${SURF + bowlY * 2} ${540 + bowlW} ${SURF}`, fill: dd >= d ? "rgba(239,68,68,0.18)" : "rgba(245,165,36,0.12)", stroke: dd >= d ? "#ef4444" : "#f5a524", "stroke-width": 2, "stroke-dasharray": "6 5" });
+    el("text", { x: 540, y: SURF + Math.min(bowlY, HAB_TOP - SURF) - 8 > SURF + 14 ? SURF + Math.min(bowlY, HAB_TOP - SURF) - 8 : SURF + 16, class: "ax", "text-anchor": "middle", fill: dd >= d ? "#ef4444" : "#f5a524" }).textContent = `${fmtKt(S.kt)} DAMAGE ZONE · ${Math.round(dd)} m`;
+
+    // habitat shell
+    el("rect", { x: X0 - 8, y: HAB_TOP - 8, width: X1 - X0 + 16, height: HAB_BOT - HAB_TOP + 16, rx: 14, fill: "#5a6070" });
+    el("rect", { x: X0, y: HAB_TOP, width: X1 - X0, height: HAB_BOT - HAB_TOP, rx: 8, fill: "#10172b" });
+    // borehole
+    el("rect", { x: 596, y: HAB_BOT + 8, width: 8, height: 720 - HAB_BOT - 8, fill: "#2b5e8a" });
+    el("text", { x: 612, y: 700, class: "ax" }).textContent = "BOREHOLE";
+
+    // rooms
+    ROOMS.forEach(([id, label, x, y, w, h]) => {
+      const g = el("g", { class: "room" + (S.room === id ? " on" : ""), tabindex: 0, role: "button", "aria-label": label.toLowerCase(), "data-id": id });
+      el("rect", { class: "hit", x, y, width: w, height: h, rx: 3 }, g);
+      furniture(id, x, y, w, h, g);
+      if (id === "shaft") { el("text", { class: "rl", x: x + w / 2, y: y + 22, "text-anchor": "middle" }, g).textContent = "LIFT"; }
+      else if (id === "escape") { el("text", { class: "rl", x: x + w / 2, y: y + 22, "text-anchor": "middle", "font-size": 10 }, g).textContent = "EXIT"; }
+      else el("text", { class: "rl", x: x + 8, y: y + 17 }, g).textContent = label;
+      g.addEventListener("click", () => pick(id));
+      g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); pick(id); } });
+    });
+    // hatch for escape
+    el("rect", { x: 894, y: SURF - 6, width: 44, height: 6, fill: "#4a5578" });
+
+    // system flows
+    const F = {
+      air: ["#7dd3fc", [`M300 ${SURF - 30} V600`, `M250 560 V530 H900`, `M520 530 V${SURF - 30}`]],
+      water: ["#3b82f6", [`M600 715 V615`, `M640 560 V520 H770`]],
+      power: ["#f5a524", [`M425 600 V545 H920`, `M425 545 H160`, `M200 545 V${SURF + 20}`]],
+    };
+    Object.entries(F).forEach(([k, [c, paths]]) => { if (S.sys[k]) paths.forEach(p => el("path", { class: "flow", d: p, stroke: c })); });
+
+    // surface label
+    el("text", { x: 990, y: SURF - 8, class: "ax", "text-anchor": "end" }).textContent = "SURFACE";
+    el("text", { x: X1, y: HAB_BOT + 26, class: "ax", "text-anchor": "end" }).textContent = `HABITAT · ${d} m DOWN · NOT TO SCALE`;
+  }
+
+  function furniture(id, x, y, w, h, g) {
+    const r = (a) => el("rect", { class: "furn", ...a }, g), f = (a) => el("rect", { class: "furnf", ...a }, g), c = (a) => el("circle", { class: "furn", ...a }, g);
+    switch (id) {
+      case "entrance": el("path", { d: `M${x} ${y + 20} L${x + w / 2} ${y} L${x + w} ${y + 20}`, fill: "none", stroke: "#4a5578", "stroke-width": 2 }, g); r({ x: x + 60, y: y + 30, width: 30, height: 38 }); break;
+      case "shaft": for (let yy = y + 34; yy < y + h - 10; yy += 26) el("path", { class: "furn", d: `M${x + 6} ${yy} L${x + w - 6} ${yy + 13} L${x + 6} ${yy + 26}` }, g); break;
+      case "escape": for (let yy = y + 30; yy < y + h; yy += 12) el("line", { x1: x + 8, y1: yy, x2: x + w - 8, y2: yy, stroke: "#4a5578", "stroke-width": 1.5 }, g); break;
+      case "airlock": r({ x: x + 6, y: y + 30, width: 10, height: 64 }); r({ x: x + w - 16, y: y + 30, width: 10, height: 64 }); c({ cx: x + w / 2, cy: y + 52, r: 10 }); break;
+      case "command": f({ x: x + 10, y: y + 34, width: 40, height: 24 }); f({ x: x + 58, y: y + 34, width: 40, height: 24 }); r({ x: x + 10, y: y + 72, width: 100, height: 18 }); break;
+      case "living": r({ x: x + 20, y: y + 56, width: 90, height: 24, rx: 4 }); f({ x: x + 130, y: y + 40, width: 50, height: 40, rx: 6 }); break;
+      case "kitchen": r({ x: x + 8, y: y + 64, width: w - 16, height: 26 }); f({ x: x + w - 30, y: y + 28, width: 20, height: 34 }); break;
+      case "beds": for (let i = 0; i < 3; i++) { r({ x: x + 8 + i * 46, y: y + 40, width: 38, height: 14 }); r({ x: x + 8 + i * 46, y: y + 72, width: 38, height: 14 }); } break;
+      case "medical": r({ x: x + 10, y: y + 60, width: 50, height: 16 }); el("path", { d: `M${x + 75} ${y + 34} v20 M${x + 65} ${y + 44} h20`, stroke: "#ef4444", "stroke-width": 4 }, g); break;
+      case "plant": for (let i = 0; i < 3; i++) c({ cx: x + 36 + i * 50, cy: y + 62, r: 18 }); break;
+      case "power": f({ x: x + 12, y: y + 32, width: 70, height: 56 }); for (let i = 0; i < 4; i++) r({ x: x + 96 + i * 20, y: y + 44, width: 14, height: 44 }); break;
+      case "water": r({ x: x + 12, y: y + 30, width: 60, height: 62, rx: 8 }); f({ x: x + 13, y: y + 56, width: 58, height: 35 }); r({ x: x + 86, y: y + 30, width: 60, height: 62, rx: 8 }); f({ x: x + 87, y: y + 50, width: 58, height: 41 }); break;
+      case "stores": for (let i = 0; i < 4; i++) { r({ x: x + 12 + i * 58, y: y + 28, width: 48, height: 64 }); for (let j = 1; j < 4; j++) el("line", { x1: x + 12 + i * 58, y1: y + 28 + j * 16, x2: x + 60 + i * 58, y2: y + 28 + j * 16, stroke: "#4a5578" }, g); } break;
+    }
+  }
+
+  function detail() {
+    const R = ROOMS.find(r => r[0] === S.room);
+    const [, , , , , , title, summary, specs, em] = R;
+    $("detail").innerHTML = `<div><div class="k">${ROOMS.indexOf(R) + 1} of ${ROOMS.length}</div><h3>${title}</h3><p>${summary}</p></div><div><ul>${specs.map(([k, v]) => `<li><span>${k}</span><b>${v}</b></li>`).join("")}</ul><div class="em">${em}</div></div>`;
+  }
+
+  function pick(id) {
+    S.room = id; build(); detail();
+    $("roomChips").querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.id === id));
+  }
+
+  function render() {
+    build(); detail();
+    const d = S.depth, dd = dmgDepth(S.kt), lift = d / 1.0 + 15, stairs = d / 0.25;
+    $("cutTitle").innerHTML = `<b>${d} m</b> Fortes shelter`;
+    $("ktOut").textContent = fmtKt(S.kt);
+    $("hitVerdict").innerHTML = dd < d ? `<span class="st-safe">Shelter intact.</span> The damage zone stops ${Math.round(d - dd)} m above the roof.` : `<span class="st-fatal">Breached.</span> Choose ${d === 100 ? "a site away from targets" : "a deeper shelter"}.`;
+    $("r-over").textContent = d + " m";
+    $("r-over-s").textContent = `≈ ${Math.round(d * 2)} tonnes of rock and soil per m²`;
+    $("r-kill").textContent = "≈ " + killLabel(d);
+    $("r-lift").textContent = fmtT(lift);
+    $("r-lift-s").textContent = `Stairs ≈ ${fmtT(stairs)} with no power`;
+    $("depthTable").innerHTML = `<thead><tr><th>Depth</th><th>Direct hit survived to</th><th>Earth per m²</th><th>Lift</th><th>Stairs</th></tr></thead><tbody>${DEPTHS.map(x => `<tr class="${x === d ? "on" : ""}"><td>${x} m</td><td>≈ ${killLabel(x)}</td><td>≈ ${x * 2} t</td><td>${fmtT(x + 15)}</td><td>${fmtT(x / 0.25)}</td></tr>`).join("")}</tbody>`;
+  }
+
+  // ================= wiring =================
+  DEPTHS.forEach(d => {
+    const b = document.createElement("button"); b.className = "chip"; b.textContent = d + " m"; b.setAttribute("aria-pressed", d === S.depth);
+    b.onclick = () => { S.depth = d; $("depthChips").querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b)); render(); };
+    $("depthChips").appendChild(b);
+  });
+  [["air", "Air", "#7dd3fc"], ["water", "Water", "#3b82f6"], ["power", "Power", "#f5a524"]].forEach(([k, n, c]) => {
+    const b = document.createElement("button"); b.className = "chip"; b.innerHTML = `<i style="background:${c}"></i>${n}`; b.setAttribute("aria-pressed", S.sys[k]);
+    b.onclick = () => { S.sys[k] = !S.sys[k]; b.setAttribute("aria-pressed", S.sys[k]); build(); };
+    $("sysChips").appendChild(b);
+  });
+  ROOMS.forEach(([id, label]) => {
+    const b = document.createElement("button"); b.className = "chip"; b.dataset.id = id; b.textContent = label[0] + label.slice(1).toLowerCase();
+    b.setAttribute("aria-pressed", id === S.room); b.onclick = () => pick(id);
+    $("roomChips").appendChild(b);
+  });
+  const KMIN = 1, KMAX = 1000;
+  $("kt").value = Math.round(1000 * Math.log(S.kt / KMIN) / Math.log(KMAX / KMIN));
+  $("kt").oninput = e => { const v = KMIN * Math.pow(KMAX / KMIN, +e.target.value / 1000); S.kt = v < 10 ? +v.toFixed(1) : Math.round(v); render(); };
+  render();
+})();
+</script>
+</body>
+</html>
