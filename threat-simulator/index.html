@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Threat Simulator</title>
+<meta name="description" content="Not every emergency is a bomb. Step through a pandemic, a national blackout, a chemical release or civil unrest day by day, at home and in a Fortes shelter.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: brand frame; threat picker and its settings left, one chart plus a time scrubber right;
+   home vs Fortes status board, event log and sources below. Single dark look by choice. */
+:root {
+  --ink: #0f1526;        /* page ground, Fortes navy */
+  --panel: #161d33;      /* raised surfaces */
+  --line: #2a3350;       /* hairlines */
+  --cream: #f3f0ea;      /* headline text */
+  --muted: #8f97ad;      /* secondary text */
+  --red: #ef4444;        /* Fortes red, the accent */
+  --amber: #f5a524;      /* warning state */
+  --green: #3ecf8e;      /* protected state */
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ink); color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 24px 40px; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: 56px; height: 56px; border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: var(--cream); }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(34px, 6vw, 68px); line-height: .95; margin: 18px 0 10px; text-wrap: balance; letter-spacing: -.01em; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 62ch; margin: 0 0 28px; font-size: 16px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.controls { display: grid; gap: 22px; }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 9px 10px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.row3 .chip { text-align: center; }
+input[type=range] { width: 100%; accent-color: var(--red); }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.btn { font-family: var(--f-display); text-transform: uppercase; font-size: 18px; letter-spacing: .04em; background: var(--red); color: var(--ink); border: 0; padding: 16px 18px; cursor: pointer; border-radius: 2px; width: 100%; }
+.btn:hover { filter: brightness(1.08); }
+
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+canvas#map { width: 100%; aspect-ratio: 16 / 10; max-width: 100%; display: block; background: #0b1020; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px 16px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(1px); }
+.legend span { color: var(--muted); }
+.legend b { font-family: var(--f-mono); font-weight: 600; margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 28px; }
+.readout > div { padding: 14px 16px 14px 0; min-width: 0; }
+.readout > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+.readout .v { font-family: var(--f-display); font-size: clamp(22px, 3vw, 30px); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 700px) { .readout { grid-template-columns: 1fr 1fr; } .readout > div:nth-child(3) { padding-left: 0; border-left: 0; } .readout > div:nth-child(n+3) { border-top: 1px solid var(--line); } }
+
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; }
+.compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card.fortes { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.card.fortes h3 { color: var(--red); }
+.verdict { font-family: var(--f-display); font-size: 26px; text-transform: uppercase; line-height: 1; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; padding: 5px 9px; border: 1px solid currentColor; width: fit-content; }
+.pill::before { content: ""; width: 7px; height: 7px; background: currentColor; }
+.st-fatal { color: var(--red); } .st-severe { color: var(--amber); } .st-injury { color: #e8d36a; } .st-safe { color: var(--green); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li span { color: var(--muted); }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.section-svg { width: 100%; height: auto; max-width: 100%; }
+
+.timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .timeline { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .timeline { grid-template-columns: 1fr; } }
+.tl { border-top: 2px solid var(--line); padding-top: 10px; min-width: 0; }
+.tl.hot { border-top-color: var(--red); }
+.tl .t { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--cream); font-variant-numeric: tabular-nums; }
+.tl p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); letter-spacing: .02em; display: flex; align-items: baseline; gap: 12px; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.chips4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.clockrow { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.clock { font-family: var(--f-display); font-size: clamp(26px, 4vw, 40px); line-height: 1; font-variant-numeric: tabular-nums; }
+.phase { font-family: var(--f-mono); font-size: 12px; color: var(--red); letter-spacing: .12em; text-transform: uppercase; }
+canvas#chart { width: 100%; height: 300px; display: block; background: #0b1020; cursor: ew-resize; touch-action: pan-y; }
+.scrub { display: flex; gap: 10px; align-items: center; }
+.scrub input { flex: 1; }
+.play { font: 600 12px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; background: var(--red); color: var(--ink); border: 0; padding: 9px 14px; cursor: pointer; border-radius: 2px; min-width: 76px; }
+.play:focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+.key { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+.key i { width: 14px; height: 2px; display: inline-block; }
+.key i.band { height: 10px; background: rgba(29,155,214,0.18); }
+.board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .board { grid-template-columns: minmax(0, 1fr); } }
+.board .card ul li { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; justify-content: stretch; }
+.board .card ul li span { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding-top: 2px; }
+.board .card ul li em { font-style: normal; font-size: 14px; color: var(--cream); }
+.dot { display: inline-block; width: 8px; height: 8px; margin-right: 7px; transform: translateY(-1px); }
+.d-good { background: var(--green); } .d-warn { background: var(--amber); } .d-bad { background: var(--red); }
+.log { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.log li { font-size: 13px; color: var(--muted); border-left: 2px solid var(--line); padding-left: 10px; opacity: .45; }
+.log li.past { opacity: 1; border-left-color: var(--red); }
+.log li b { display: block; font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--cream); font-weight: 600; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th, .tbl td { text-align: left; padding: 8px 12px 8px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--red); font-weight: 600; }
+.tbl td { color: var(--muted); }
+.tbl td:first-child { color: var(--cream); white-space: nowrap; }
+.scroll { overflow-x: auto; }
+</style>
+
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Threat simulator</div>
+    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+  </div>
+  <h1>Not every crisis <em>is a bomb.</em></h1>
+  <p class="lede">A pandemic, a national blackout, a chemical release, a breakdown of order. Pick one, set it up, and step through it day by day to see what fails at home and what keeps working in a Fortes shelter.</p>
+
+  <div class="grid">
+    <div class="controls">
+      <div>
+        <div class="label">Threat</div>
+        <div class="chips4" id="threats" role="group" aria-label="Threat"></div>
+      </div>
+      <div id="opts" class="controls"></div>
+    </div>
+
+    <div class="mapwrap">
+      <div class="clockrow"><div class="clock" id="clock"></div><div class="phase" id="phase"></div></div>
+      <div class="maphead"><span id="chartTitle"></span><span id="chartVal"></span></div>
+      <canvas id="chart" aria-label="Chart for the selected threat; click or drag to move through time"></canvas>
+      <div class="key" id="key"></div>
+      <div class="scrub"><button class="play" id="play">Play</button><input type="range" id="time" min="0" max="1000" value="0" aria-label="Time"></div>
+    </div>
+  </div>
+
+  <h2 id="boardTitle">Right now</h2>
+  <div class="board">
+    <div class="card" id="b-home"></div>
+    <div class="card fortes" id="b-fortes"></div>
+  </div>
+
+  <h2>How it unfolds</h2>
+  <ul class="log" id="log"></ul>
+
+  <h2>The facts behind it</h2>
+  <div class="scroll"><table class="tbl" id="facts"></table></div>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Prepared for more than one threat → <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Educational scenario models, not forecasts. The pandemic uses a simple SEIR model with a 5-day incubation and 7-day infectious period and no lockdown or vaccine. Power restoration is a smooth curve around the stated median for each cause. The chemical plume is a steady block of gas passing at 15 km/h; indoor air follows outdoor air at the stated air-change rate. Supplies run down at a steady rate. Timings of knock-on effects at home are typical published estimates and vary by area. Fortes protection figures are illustrative, not a Fortes guarantee.</p>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const cv = $("chart"), ctx = cv.getContext("2d");
+  const C = { fortes: "#1d9bd6", violet: "#a855f7", home: "#d4732a" };
+  const ROWS = ["Air", "Water", "Power", "Food", "Health", "Safety"];
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const pct = v => (v >= 10 ? Math.round(v) : v >= 1 ? v.toFixed(1) : v >= 0.01 ? v.toFixed(2) : "0") + "%";
+  const sig = x => 1 / (1 + Math.exp(-x));
+
+  // ================= threats =================
+  // Each threat: settings, a time axis, a model that returns chart series, status(t) for home and Fortes, events and facts.
+  const THREATS = {
+    pandemic: {
+      name: "Pandemic", sub: "A new virus spreads", unit: "day", T: 300,
+      opts: [
+        { k: "r0", label: "How contagious (R₀)", min: 1.3, max: 6, step: 0.1, v: 3, fmt: v => v.toFixed(1), hint: "Seasonal flu ≈ 1.3, original Covid ≈ 2.5–3, Delta ≈ 5." },
+        { k: "weeks", label: "Weeks sealed in", min: 4, max: 40, step: 1, v: 16, fmt: v => v + " weeks", hint: "Members seal in when 1 in 1,000 people are ill." },
+      ],
+      model(p) {
+        const sigma = 1 / 5, gamma = 1 / 7, beta = p.r0 * gamma, dt = 0.1;
+        let S = 1 - 1e-6, E = 0, I = 1e-6, R = 0;
+        const t = [], ill = [], ever = [];
+        for (let i = 0; i <= this.T / dt; i++) {
+          if (i % 10 === 0) { t.push(i * dt); ill.push(I * 100); ever.push((1 - S) * 100); }
+          const nE = beta * S * I * dt, nI = sigma * E * dt, nR = gamma * I * dt;
+          S -= nE; E += nE - nI; I += nI - nR; R += nR;
+        }
+        const sealAt = t[ill.findIndex(v => v >= 0.1)] ?? Infinity, sealEnd = sealAt + p.weeks * 7;
+        const peakI = ill.indexOf(Math.max(...ill));
+        return { t, max: Math.max(25, Math.ceil(Math.max(...ever) / 25) * 25), unitY: "% of population", series: [{ n: "Caught it so far", c: C.home, v: ever }, { n: "Ill right now", c: C.violet, v: ill }], band: [sealAt, sealEnd, "Fortes members sealed in"], sealAt, sealEnd, peakT: t[peakI], peakI: ill[peakI] };
+      },
+      status(t, m) {
+        const i = idx(m, t), ill = m.series[1].v[i], ever = m.series[0].v[i], sealed = t >= m.sealAt && t < m.sealEnd, after = t >= m.sealEnd;
+        const busy = ill > 5, crisis = ill > 10;
+        return {
+          home: [
+            [ill > 1 ? "warn" : "good", ill > 1 ? "Every shop, school and workplace is a chance to catch it" : "Normal, the virus is still rare"],
+            [crisis ? "warn" : "good", crisis ? "Running, with staff off sick" : "Normal"],
+            [crisis ? "warn" : "good", crisis ? "Short cuts as engineers fall ill" : "Normal"],
+            [busy ? "warn" : "good", busy ? "Empty shelves, deliveries short-staffed" : "Shops open"],
+            [ever > 20 ? "bad" : ever > 2 ? "warn" : "good", `${pct(ever)} of people have caught it. ${crisis ? "Hospitals are full." : ""}`],
+            [crisis ? "warn" : "good", crisis ? "Police and services stretched" : "Normal"],
+          ],
+          fortes: [
+            ["good", sealed ? "Filtered air from outside; no contact with anyone" : "Shelter ready, filters checked"],
+            ["good", sealed ? "Borehole and tanks" : "Mains, shelter tanks full"],
+            ["good", sealed ? "Battery bank and generators" : "Grid, shelter batteries charged"],
+            ["good", sealed ? "12+ months stored below" : "Stores topped up"],
+            [sealed ? "good" : after ? "good" : ill > 0.05 ? "warn" : "good", sealed ? "Sealed household: nobody new comes in" : after ? `Out after ${m.sealEnd - m.sealAt} days, the wave is ${ill < m.peakI ? "past its peak" : "still rising"}` : "Watching the numbers, ready to go down"],
+            ["good", sealed ? "Out of sight, door locked" : "Normal"],
+          ],
+        };
+      },
+      events(m) {
+        return [
+          [0, "First cases", "A new virus is spreading. Only a handful of people have it."],
+          [m.sealAt, "Fortes seals in", "1 in 1,000 people are ill. Members go below ground with their household."],
+          [m.t[m.series[1].v.findIndex(v => v >= 5)], "Shops strain", "1 in 20 people are ill at once. Staff shortages empty shelves."],
+          [m.peakT, "Peak", `${pct(m.peakI)} of people are ill at the same moment. Hospitals are overwhelmed.`],
+          [m.sealEnd, "Fortes opens", "Members come back up. Whether the wave has passed depends on how long they stayed down."],
+        ].filter(e => isFinite(e[0]));
+      },
+      facts: [
+        ["1918 flu", "About 500 million people infected, a third of the world's population.", "US CDC"],
+        ["Covid-19", "The original virus had an R₀ of about 2.5 to 3; Delta about 5.", "WHO; Liu & Rocklöv 2021"],
+        ["Isolation works", "A household that has no contact cannot be infected. Quarantine is the oldest public health tool there is.", "WHO"],
+        ["UK risk", "A pandemic is one of the highest-impact risks on the UK National Risk Register.", "UK National Risk Register 2023"],
+      ],
+    },
+
+    grid: {
+      name: "Grid collapse", sub: "Blackout, solar storm, EMP", unit: "day", T: 180,
+      opts: [{ k: "cause", label: "Cause", choices: [["cyber", "Cyber attack", "Median 7 days"], ["solar", "Solar storm", "Median 60 days"], ["emp", "EMP", "Median 150 days"]], v: "cyber" }],
+      model(p) {
+        const med = { cyber: 7, solar: 60, emp: 150 }[p.cause], t = [], up = [], f = [];
+        for (let d = 0; d <= this.T; d += 0.25) { t.push(d); up.push(100 * clamp((sig((d - med) / (med / 4)) - sig(-4)) / (1 - sig(-4)), 0, 1)); f.push(100); }
+        return { t, max: 100, unitY: "% with power", series: [{ n: "Fortes shelter", c: C.fortes, v: f }, { n: "Homes with power", c: C.home, v: up }], med };
+      },
+      status(t, m) {
+        const p = m.series[1].v[idx(m, t)], out = p < 80, hrs = t * 24;
+        return {
+          home: [
+            [out ? "warn" : "good", out ? "No fans or heating; most boilers need electricity" : "Normal"],
+            [!out ? "good" : t < 1 ? "good" : t < 3 ? "warn" : "bad", !out ? "Mains back" : t < 1 ? "Still flowing from towers and reservoirs" : t < 3 ? "Pressure falling, pumps on backup" : "Taps dry or boil-water notice"],
+            [out ? "bad" : "good", out ? `Off. ${pct(p)} of homes reconnected` : "Restored"],
+            [!out ? "good" : t < 1 ? "warn" : t < 3 ? "warn" : "bad", !out ? "Shops restocking" : t < 3 ? "Card machines down, panic buying" : "Supermarkets empty, freezers thawed"],
+            [!out ? "good" : t < 2 ? "warn" : "bad", !out ? "Hospitals back to normal" : t < 2 ? "Hospitals on generators" : "Hospitals running out of fuel; medicines that need a fridge spoil"],
+            [!out ? "good" : hrs < 4 ? "warn" : "bad", !out ? "Normal" : hrs < 4 ? "Phones still work on mast batteries" : "No phones or internet; alarms and CCTV dead"],
+          ],
+          fortes: [
+            ["good", "Filtered air and heating run on shelter power"],
+            ["good", "Borehole and stored water"],
+            ["good", "Battery bank and generators; the grid is not needed"],
+            ["good", "12+ months of food stored"],
+            ["good", "Medical bay with a year of medicines"],
+            ["good", "HF radio and satellite messenger; hidden armoured entrance"],
+          ],
+        };
+      },
+      events(m) {
+        return [
+          [0, "Lights out", "The grid goes down across the country."],
+          [0.17, "Phones fail", "Mobile masts run out of battery within hours. Calls and internet stop."],
+          [1, "Water", "Pumping stations rely on backup power. Pressure starts to fall."],
+          [3, "Shops empty", "Supermarkets hold only a few days of stock and cannot take cards."],
+          [m.med, "Half restored", `About half of homes have power back after ${m.med} days.`],
+        ].filter(e => e[0] <= this.T);
+      },
+      facts: [
+        ["2003 blackout", "55 million people in the US and Canada lost power, some for up to 4 days.", "US–Canada Power System Outage Task Force"],
+        ["1989 Quebec", "A solar storm took down the Quebec grid for 9 hours.", "NASA"],
+        ["Carrington event", "The 1859 solar storm set telegraph offices on fire. A repeat today could damage large transformers, which take months to replace.", "Royal Academy of Engineering 2013"],
+        ["Phone masts", "Most UK mobile masts have backup batteries for only a few hours.", "Ofcom"],
+      ],
+    },
+
+    chem: {
+      name: "Chemical release", sub: "Industrial leak or attack", unit: "hour", T: 12,
+      opts: [
+        { k: "dist", label: "Distance downwind", min: 0.5, max: 20, step: 0.5, v: 3, fmt: v => v + " km" },
+        { k: "dur", label: "Release lasts", min: 0.5, max: 8, step: 0.5, v: 2, fmt: v => v + " h" },
+        { k: "house", label: "At home", choices: [["normal", "Ordinary house", "0.5 air changes/h"], ["taped", "Taped-up room", "0.2 air changes/h"]], v: "normal" },
+        { k: "airout", label: "When the cloud has passed", choices: [["yes", "Open the windows", "Air the house out"], ["no", "Stay shut in", "Gas stays trapped"]], v: "yes" },
+      ],
+      model(p) {
+        const wind = 15, ta = p.dist / wind, D = p.dur + 0.15 * p.dist, edge = 0.15, ach = p.house === "taped" ? 0.2 : 0.5;
+        const t = [], out = [], home = [], fortes = [], dt = 0.01;
+        let ci = 0, doseO = 0, doseH = 0, clear = Infinity;
+        for (let i = 0; i <= this.T / dt; i++) {
+          const tt = i * dt, co = 100 * sig((tt - ta) / edge) * sig((ta + D - tt) / edge);
+          if (tt > ta + D + 3 * edge && clear === Infinity) clear = tt;
+          const a = p.airout === "yes" && tt > clear + 0.25 ? 6 : ach;
+          ci += a * (co - ci) * dt; doseO += co * dt; doseH += ci * dt;
+          if (i % 5 === 0) { t.push(tt); out.push(co); home.push(ci); fortes.push(co * 1e-5); }
+        }
+        return { t, max: 100, unitY: "% of outdoor peak", series: [{ n: "Fortes shelter", c: C.fortes, v: fortes }, { n: "Outdoors", c: C.violet, v: out }, { n: "Inside the house", c: C.home, v: home }], ta, end: ta + D, clear, doseRatio: doseH / doseO, peakH: Math.max(...home) };
+      },
+      status(t, m) {
+        const i = idx(m, t), co = m.series[1].v[i], ci = m.series[2].v[i], warned = t >= 0;
+        const hl = ci > 30 ? "bad" : ci > 5 ? "warn" : "good";
+        return {
+          home: [
+            [co > 5 ? (ci > 5 ? "bad" : "warn") : ci > 5 ? "warn" : "good", co > 5 ? `Gas outside; ${pct(ci)} of it has seeped in` : ci > 5 ? `Cloud has passed but ${pct(ci)} is trapped inside` : t < m.ta ? "Warning given: get in, shut windows, turn off fans" : "Air clear"],
+            ["good", "Mains water unaffected"],
+            ["good", "On"],
+            [co > 5 ? "warn" : "good", co > 5 ? "Do not eat anything left outside" : "Normal"],
+            [hl, ci > 30 ? "Burning eyes, coughing, trouble breathing" : ci > 5 ? "Irritation possible" : "No symptoms"],
+            [warned && t < m.clear + 2 ? "warn" : "good", t < m.clear + 2 ? "Go in, stay in, tune in. Roads closed" : "All clear"],
+          ],
+          fortes: [
+            ["good", "Activated carbon and HEPA filters; overpressure keeps gas out"],
+            ["good", "Borehole and tanks"],
+            ["good", "Shelter power"],
+            ["good", "Stored below"],
+            ["good", "No exposure"],
+            ["good", "Sealed behind blast doors"],
+          ],
+        };
+      },
+      events(m) {
+        return [
+          [0, "Release", "A cloud of toxic gas is released upwind. An Emergency Alert goes out."],
+          [m.ta, "Cloud arrives", "The gas reaches you. Outdoors, it is at full strength."],
+          [m.end, "Cloud passes", "Outdoor air clears. Gas that got inside the house is still there."],
+          [m.clear + 0.25, "Air out", "Advice is to open windows once the cloud has passed, or the house keeps dosing you."],
+        ];
+      },
+      facts: [
+        ["Bhopal 1984", "A methyl isocyanate leak killed thousands of people in the surrounding town overnight.", "Government of Madhya Pradesh"],
+        ["UK advice", "Go in, stay in, tune in: shut doors and windows and turn off ventilation.", "UK government"],
+        ["Shelter in place", "A house cuts the peak, but only lowers the total dose if you air it out once the cloud has gone.", "US EPA; Oak Ridge National Laboratory"],
+        ["Salisbury 2018", "A nerve agent attack in an English city needed a months-long clean-up.", "UK Home Office"],
+      ],
+    },
+
+    unrest: {
+      name: "Civil unrest", sub: "Order breaks down", unit: "day", T: 90,
+      opts: [
+        { k: "weeks", label: "Disorder lasts", min: 1, max: 10, step: 1, v: 3, fmt: v => v + (v === 1 ? " week" : " weeks") },
+        { k: "stock", label: "Supplies at home", choices: [["3", "3 days", "UK advice"], ["14", "2 weeks", "Ready.gov"], ["1", "Almost none", "Most households"]], v: "3" },
+      ],
+      model(p) {
+        const end = p.weeks * 7, stock = +p.stock, t = [], home = [], fortes = [];
+        for (let d = 0; d <= this.T; d += 0.25) {
+          t.push(d);
+          home.push(d < end + 3 ? 100 * clamp(1 - d / stock, 0, 1) : 100);
+          fortes.push(100 * clamp(1 - d / 365, 0, 1));
+        }
+        return { t, max: 100, unitY: "% of supplies left", series: [{ n: "Fortes shelter", c: C.fortes, v: fortes }, { n: "At home", c: C.home, v: home }], end, stock, outAt: stock };
+      },
+      status(t, m) {
+        const on = t < m.end, food = m.series[1].v[idx(m, t)];
+        return {
+          home: [
+            [on && t > 2 ? "warn" : "good", on && t > 2 ? "Smoke from fires nearby" : "Normal"],
+            [on && t > 7 ? "warn" : "good", on && t > 7 ? "Repairs delayed, staff cannot reach work" : "Normal"],
+            [on && t > 7 ? "warn" : "good", on && t > 7 ? "Cuts not fixed for days" : "Normal"],
+            [food <= 0 ? "bad" : on ? "warn" : "good", food <= 0 ? "Run out. Going out for food means crossing trouble" : on ? `Shops looted or shut. ${Math.round(food)}% of supplies left` : "Shops reopening"],
+            [on && t > 3 ? "warn" : "good", on && t > 3 ? "A&E overwhelmed, ambulances delayed" : "Normal"],
+            [on ? (t > 3 ? "bad" : "warn") : "good", on ? (t > 3 ? "Looting and roadblocks; police stretched thin" : "Protests turning violent") : "Order restored"],
+          ],
+          fortes: [
+            ["good", "Filtered air; smoke stays outside"],
+            ["good", "Borehole and tanks"],
+            ["good", "Independent power"],
+            ["good", "12+ months stored, no need to go out"],
+            ["good", "Medical bay on site"],
+            ["good", "Hidden entrance, armoured doors, CCTV"],
+          ],
+        };
+      },
+      events(m) {
+        return [
+          [0, "Trigger", "A shock sparks protests that spread between cities."],
+          [3, "Shops close", "Supermarkets are looted or shut. Deliveries stop."],
+          [m.outAt, "Home runs out", `A household with ${m.stock === 1 ? "almost nothing" : m.stock + " days of supplies"} is out of food and water.`],
+          [m.end, "Order returns", "Police regain control. Shops take days to restock."],
+        ].filter(e => e[0] <= this.T).sort((a, b) => a[0] - b[0]);
+      },
+      facts: [
+        ["England 2011", "Riots spread from London to several cities over five days.", "UK Home Office"],
+        ["Just in time", "UK supermarkets hold only a few days of stock and rely on daily deliveries.", "UK Parliament EFRA Committee"],
+        ["Home supplies", "UK advice is at least 3 days of food and water; US advice is up to 2 weeks.", "gov.uk, ready.gov"],
+      ],
+    },
+  };
+
+  // ================= state =================
+  const S = { threat: "grid", t: 0, playing: false, p: {} };
+  Object.entries(THREATS).forEach(([k, th]) => { S.p[k] = {}; th.opts.forEach(o => S.p[k][o.k] = o.v); });
+  let M = null;
+  const th = () => THREATS[S.threat];
+  function idx(m, t) { const n = m.t.length, step = m.t[1] - m.t[0]; return clamp(Math.round(t / step), 0, n - 1); }
+  const fmtT = t => th().unit === "hour" ? (t < 1 ? Math.round(t * 60) + " min" : Math.floor(t) + " h " + String(Math.round((t % 1) * 60) % 60).padStart(2, "0")) : (t > 0 && t < 1 ? "Hour " + Math.round(t * 24) : "Day " + Math.floor(t));
+
+  // ================= controls =================
+  function buildOpts() {
+    const el = $("opts"); el.innerHTML = "";
+    th().opts.forEach(o => {
+      const wrap = document.createElement("div");
+      if (o.choices) {
+        wrap.innerHTML = `<div class="label">${o.label}</div><div class="${o.choices.length === 3 ? "row3" : "seg"}" role="group" aria-label="${o.label}"></div>`;
+        const g = wrap.lastChild;
+        o.choices.forEach(([v, n, sub]) => {
+          const b = document.createElement("button"); b.className = "chip"; b.innerHTML = `${n}<small>${sub}</small>`; b.setAttribute("aria-pressed", S.p[S.threat][o.k] === v);
+          b.onclick = () => { S.p[S.threat][o.k] = v; g.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b)); update(); };
+          g.appendChild(b);
+        });
+      } else {
+        wrap.innerHTML = `<div class="label"><span>${o.label}</span><output></output></div><input type="range" min="${o.min}" max="${o.max}" step="${o.step}" value="${S.p[S.threat][o.k]}" aria-label="${o.label}">${o.hint ? `<div class="hint">${o.hint}</div>` : ""}`;
+        const out = wrap.querySelector("output"), inp = wrap.querySelector("input");
+        out.textContent = o.fmt(+inp.value);
+        inp.oninput = () => { S.p[S.threat][o.k] = +inp.value; out.textContent = o.fmt(+inp.value); update(); };
+      }
+      el.appendChild(wrap);
+    });
+  }
+
+  // ================= chart =================
+  function draw() {
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (!w || !M) return;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, w, h);
+    const L = 40, R = 12, T = 18, B = 24, pw = w - L - R, ph = h - T - B, Tm = th().T;
+    const X = t => L + pw * t / Tm, Y = v => T + ph * (1 - clamp(v, 0, M.max) / M.max);
+    ctx.font = "500 10px 'JetBrains Mono', monospace"; ctx.fillStyle = "#8f97ad"; ctx.strokeStyle = "rgba(143,151,173,0.12)"; ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) { const v = M.max * i / 4, y = Y(v); ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke(); ctx.textAlign = "right"; ctx.fillText(Math.round(v) + "%", L - 5, y + 3); }
+    const tick = th().unit === "hour" ? 2 : Tm <= 100 ? 15 : 30;
+    ctx.textAlign = "center";
+    for (let t = 0; t <= Tm; t += tick) ctx.fillText(th().unit === "hour" ? t + "h" : "d" + t, X(t), h - 7);
+    if (M.band && isFinite(M.band[0])) { ctx.fillStyle = "rgba(29,155,214,0.14)"; ctx.fillRect(X(M.band[0]), T, X(Math.min(M.band[1], Tm)) - X(M.band[0]), ph); }
+    M.series.forEach(s => {
+      ctx.strokeStyle = s.c; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.beginPath();
+      s.v.forEach((v, i) => { const x = X(M.t[i]), y = Y(v); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    });
+    // cursor + markers
+    const i = idx(M, S.t), x = X(M.t[i]);
+    ctx.strokeStyle = "rgba(243,240,234,0.6)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T + ph); ctx.stroke();
+    M.series.forEach(s => { ctx.fillStyle = s.c; ctx.strokeStyle = "#0b1020"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, Y(s.v[i]), 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+    // direct labels at the right end, nudged apart
+    ctx.font = "600 10px 'JetBrains Mono', monospace"; ctx.textAlign = "right";
+    const lab = M.series.map(s => ({ n: s.n.toUpperCase(), y: Y(s.v[s.v.length - 1]) - 6 })).sort((a, b) => a.y - b.y);
+    for (let k = 1; k < lab.length; k++) if (lab[k].y - lab[k - 1].y < 12) lab[k].y = lab[k - 1].y + 12;
+    for (let k = lab.length - 1; k >= 0; k--) lab[k].y = Math.min(lab[k].y, T + ph - 4 - (lab.length - 1 - k) * 12);
+    lab.forEach(l => { ctx.fillStyle = "#f3f0ea"; ctx.fillText(l.n, w - R - 2, clamp(l.y, T + 9, T + ph - 3)); });
+  }
+
+  // ================= render =================
+  function update() { M = th().model(S.p[S.threat]); render(); }
+  function render() {
+    const t = S.t, i = idx(M, t), st = th().status(t, M);
+    $("time").value = Math.round(1000 * t / th().T);
+    $("clock").textContent = fmtT(t);
+    const evs = th().events(M), past = evs.filter(e => e[0] <= t + 1e-9);
+    $("phase").textContent = past.length ? past[past.length - 1][1] : "";
+    $("chartTitle").innerHTML = `<b>${th().name}</b> · ${M.unitY}`;
+    $("chartVal").textContent = M.series.map(s => `${s.n}: ${pct(s.v[i])}`).join(" · ");
+    $("key").innerHTML = M.series.map(s => `<span><i style="background:${s.c}"></i>${s.n}</span>`).join("") + (M.band ? `<span><i class="band"></i>${M.band[2]}</span>` : "");
+    const card = (el, title, rows) => el.innerHTML = `<h3>${title}</h3><ul>${rows.map(([cls, txt], k) => `<li><span>${ROWS[k]}</span><em><i class="dot d-${cls}"></i>${txt}</em></li>`).join("")}</ul>`;
+    card($("b-home"), "At home", st.home);
+    card($("b-fortes"), "Fortes member", st.fortes);
+    $("boardTitle").textContent = `${fmtT(t)}: home vs Fortes`;
+    $("log").innerHTML = evs.map(([et, k, p]) => `<li class="${et <= t + 1e-9 ? "past" : ""}"><b>${fmtT(et).toUpperCase()} · ${k}</b>${p}</li>`).join("");
+    if (S.threat === "chem") $("chartVal").textContent += ` · total dose indoors ${pct(100 * M.doseRatio)} of outdoors`;
+    $("facts").innerHTML = `<thead><tr><th>Topic</th><th>Fact</th><th>Source</th></tr></thead><tbody>${th().facts.map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join("")}</tbody>`;
+    draw();
+  }
+
+  // ================= wiring =================
+  Object.entries(THREATS).forEach(([k, v]) => {
+    const b = document.createElement("button"); b.className = "chip"; b.innerHTML = `${v.name}<small>${v.sub}</small>`; b.setAttribute("aria-pressed", k === S.threat);
+    b.onclick = () => { S.threat = k; S.t = 0; stop(); $("threats").querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b)); buildOpts(); update(); };
+    $("threats").appendChild(b);
+  });
+  $("time").oninput = e => { stop(); S.t = th().T * +e.target.value / 1000; render(); };
+  const seek = ev => { const r = cv.getBoundingClientRect(); S.t = clamp((ev.clientX - r.left - 40) / (cv.clientWidth - 52), 0, 1) * th().T; stop(); render(); };
+  cv.addEventListener("pointerdown", ev => { seek(ev); cv.setPointerCapture(ev.pointerId); });
+  cv.addEventListener("pointermove", ev => { if (ev.buttons) seek(ev); });
+  let raf = null, last = 0;
+  function stop() { S.playing = false; $("play").textContent = "Play"; if (raf) cancelAnimationFrame(raf); raf = null; }
+  $("play").onclick = () => {
+    if (S.playing) return stop();
+    if (S.t >= th().T) S.t = 0;
+    S.playing = true; $("play").textContent = "Pause"; last = performance.now();
+    const step = now => { S.t = Math.min(th().T, S.t + th().T * (now - last) / 12000); last = now; render(); if (S.t < th().T && S.playing) raf = requestAnimationFrame(step); else stop(); };
+    raf = requestAnimationFrame(step);
+  };
+  new ResizeObserver(draw).observe(cv);
+  if (document.fonts) document.fonts.ready.then(draw);
+  buildOpts(); update();
+})();
+</script>
+</body>
+</html>
