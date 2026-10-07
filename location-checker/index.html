@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fortes Location Checker</title>
-<meta name="description" content="Pick your town and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits.">
+<meta name="description" content="Pick your town in the UK, Europe or the USA and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits.">
 <meta property="og:title" content="Fortes Location Checker">
-<meta property="og:description" content="Pick your town and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits.">
+<meta property="og:description" content="Pick your town in the UK, Europe or the USA and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="og.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -160,10 +160,14 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     <a class="site" href="../index.html">← ALL FORTES TOOLS</a>
   </div>
   <h1>Is where you live <em>safe enough?</em></h1>
-  <p class="lede">Pick your town. See the nearest likely targets in a war, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits your location.</p>
+  <p class="lede">Pick your town in the UK, Europe or the USA. See the nearest likely targets in a war, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits your location.</p>
 
   <div class="grid">
     <div class="controls">
+      <div>
+        <div class="label">Region</div>
+        <div class="row3" id="region" role="group" aria-label="Region"></div>
+      </div>
       <div>
         <div class="label">Your location</div>
         <select id="town" aria-label="Your town"></select>
@@ -177,11 +181,11 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
       <div>
         <div class="label"><span>Wind on the day</span><output id="windOut"></output></div>
         <div class="row4" id="winds" role="group" aria-label="Wind direction"></div>
-        <div class="hint">The percentage is how often the UK wind blows from that direction. South-westerlies are the most common.</div>
+        <div class="hint" id="windHint"></div>
       </div>
       <div>
         <div class="label">Map range</div>
-        <div class="row3" id="ranges" role="group" aria-label="Map range"></div>
+        <div class="row4" id="ranges" role="group" aria-label="Map range"></div>
       </div>
       <div>
         <div class="label">Fortes shelter depth</div>
@@ -237,7 +241,7 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
     <div>Book a confidential site assessment → <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
   </div>
-  <p class="fine">Educational model only. The target list is an illustrative set of military sites, cities and industry drawn from public Cold War civil-defence exercises and open-source analysis; it is not intelligence and no one knows a real target plan. Military sites and industry are modelled as ground bursts, cities as airbursts, with a steady 24 km/h wind over flat terrain. Wind frequencies are rounded UK averages. Blast, heat and radiation use the same cube-root scaling and fallout plume as the Fortes nuclear simulator (Glasstone &amp; Dolan; OTA, The Effects of Nuclear War). Shelter depths and protection figures are illustrative, not a Fortes guarantee.</p>
+  <p class="fine">Educational model only. The target list is an illustrative set of military sites, cities and industry drawn from public Cold War civil-defence exercises and open-source analysis; it is not intelligence and no one knows a real target plan. Military sites and industry are modelled as ground bursts, cities as airbursts, with a steady 24 km/h wind over flat terrain. Wind frequencies are rounded regional averages for the UK, mainland Europe and the continental USA; Cyprus and the Mediterranean differ. Blast, heat and radiation use the same cube-root scaling and fallout plume as the Fortes nuclear simulator (Glasstone &amp; Dolan; OTA, The Effects of Nuclear War). Shelter depths and protection figures are illustrative, not a Fortes guarantee.</p>
 </div>
 
 <script>
@@ -246,7 +250,12 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
   const cv = $("map"), ctx = cv.getContext("2d");
 
   // ================= places =================
-  const TOWNS = [
+  const mk = l => l.map(([name, lat, lon]) => ({ name, lat, lon }));
+  // Rounded wind climatology per region: share of the time the wind blows FROM each direction.
+  const W = (n, ne, e, se, so, sw, w, nw) => [["N", 0, n], ["NE", 45, ne], ["E", 90, e], ["SE", 135, se], ["S", 180, so], ["SW", 225, sw], ["W", 270, w], ["NW", 315, nw]];
+  const REGIONS = {
+    uk: { name: "UK", sub: "Great Britain, NI", start: "Reading", alert: "A UK Emergency Alert sounds on phones.", miles: false, ranges: [100, 250, 500, 1000],
+      winds: W(0.06, 0.07, 0.08, 0.08, 0.12, 0.24, 0.22, 0.13), windNote: "South-westerlies are the most common across the UK.", towns: mk([
     ["Aberdeen", 57.150, -2.094], ["Aberystwyth", 52.415, -4.083], ["Bangor", 53.228, -4.129], ["Bath", 51.381, -2.359], ["Belfast", 54.597, -5.930],
     ["Birmingham", 52.486, -1.890], ["Bournemouth", 50.720, -1.880], ["Brighton", 50.822, -0.137], ["Bristol", 51.455, -2.588], ["Cambridge", 52.205, 0.122],
     ["Canterbury", 51.280, 1.079], ["Cardiff", 51.481, -3.179], ["Carlisle", 54.892, -2.933], ["Cheltenham", 51.899, -2.078], ["Colchester", 51.896, 0.892],
@@ -261,7 +270,43 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     ["Salisbury", 51.069, -1.795], ["Scarborough", 54.283, -0.400], ["Sheffield", 53.381, -1.470], ["Shrewsbury", 52.707, -2.754], ["Southampton", 50.910, -1.404],
     ["Stirling", 56.117, -3.937], ["Stoke-on-Trent", 53.003, -2.180], ["Swansea", 51.621, -3.944], ["Taunton", 51.015, -3.106], ["Thurso", 58.593, -3.522],
     ["Truro", 50.263, -5.051], ["Windermere", 54.380, -2.907], ["York", 53.960, -1.082],
-  ].map(([name, lat, lon]) => ({ name, lat, lon }));
+  ]) },
+    eu: { name: "Europe", sub: "EU and neighbours", start: "Brussels", alert: "An EU-Alert or national alert sounds on phones in most countries.", miles: false, ranges: [100, 250, 500, 1000],
+      winds: W(0.10, 0.10, 0.10, 0.08, 0.11, 0.19, 0.19, 0.13), windNote: "Westerlies are the most common across mainland Europe.", towns: mk([
+    ["Amsterdam", 52.368, 4.904], ["Antwerp", 51.219, 4.402], ["Athens", 37.984, 23.728], ["Barcelona", 41.385, 2.173], ["Berlin", 52.520, 13.405],
+    ["Bilbao", 43.263, -2.935], ["Bordeaux", 44.838, -0.579], ["Bratislava", 48.149, 17.107], ["Brest", 48.390, -4.486], ["Brussels", 50.850, 4.352],
+    ["Bucharest", 44.427, 26.103], ["Budapest", 47.498, 19.040], ["Cologne", 50.938, 6.960], ["Copenhagen", 55.676, 12.568], ["Cork", 51.899, -8.476],
+    ["Dresden", 51.050, 13.738], ["Dublin", 53.350, -6.260], ["Eindhoven", 51.441, 5.470], ["Famagusta", 35.125, 33.941], ["Florence", 43.770, 11.256],
+    ["Frankfurt", 50.110, 8.682], ["Gdańsk", 54.352, 18.646], ["Geneva", 46.204, 6.143], ["Gothenburg", 57.709, 11.975], ["Hamburg", 53.551, 9.994],
+    ["Helsinki", 60.170, 24.938], ["Kaiserslautern", 49.444, 7.769], ["Kraków", 50.065, 19.945], ["Kyrenia", 35.340, 33.319], ["Liège", 50.633, 5.567],
+    ["Lille", 50.629, 3.057], ["Limassol", 34.707, 33.022], ["Lisbon", 38.722, -9.139], ["Ljubljana", 46.057, 14.506], ["Luxembourg", 49.612, 6.130],
+    ["Lyon", 45.764, 4.836], ["Madrid", 40.417, -3.704], ["Marseille", 43.296, 5.370], ["Milan", 45.464, 9.190], ["Munich", 48.135, 11.582],
+    ["Nantes", 47.218, -1.554], ["Naples", 40.852, 14.268], ["Nice", 43.710, 7.262], ["Nicosia", 35.185, 33.382], ["Oslo", 59.914, 10.752],
+    ["Paris", 48.857, 2.352], ["Porto", 41.158, -8.629], ["Prague", 50.075, 14.438], ["Riga", 56.950, 24.105], ["Rome", 41.903, 12.496],
+    ["Rotterdam", 51.924, 4.478], ["Salzburg", 47.810, 13.055], ["Seville", 37.389, -5.984], ["Sofia", 42.698, 23.322], ["Stockholm", 59.329, 18.069],
+    ["Strasbourg", 48.573, 7.752], ["Stuttgart", 48.776, 9.183], ["Tallinn", 59.437, 24.754], ["Thessaloniki", 40.640, 22.944], ["Toulouse", 43.605, 1.444],
+    ["Turin", 45.070, 7.687], ["Valencia", 39.470, -0.376], ["Venice", 45.441, 12.316], ["Vienna", 48.208, 16.373], ["Vilnius", 54.687, 25.280],
+    ["Warsaw", 52.230, 21.012], ["Zagreb", 45.815, 15.982], ["Zurich", 47.377, 8.540],
+  ]) },
+    us: { name: "USA", sub: "United States", start: "Washington, DC", alert: "A Wireless Emergency Alert sounds on phones.", miles: true, ranges: [161, 402, 805, 1609],
+      winds: W(0.10, 0.07, 0.07, 0.10, 0.17, 0.17, 0.17, 0.15), windNote: "Westerly and southerly winds are the most common across the continental USA.", towns: mk([
+    ["Albuquerque", 35.084, -106.651], ["Amarillo", 35.222, -101.831], ["Anchorage", 61.218, -149.900], ["Asheville", 35.595, -82.551], ["Atlanta", 33.749, -84.388],
+    ["Austin", 30.267, -97.743], ["Billings", 45.783, -108.501], ["Bismarck", 46.808, -100.784], ["Boise", 43.615, -116.202], ["Boston", 42.360, -71.059],
+    ["Bozeman", 45.677, -111.043], ["Buffalo", 42.886, -78.878], ["Burlington, VT", 44.476, -73.212], ["Charleston, SC", 32.776, -79.931], ["Charlotte", 35.227, -80.843],
+    ["Cheyenne", 41.140, -104.820], ["Chicago", 41.878, -87.630], ["Columbus", 39.961, -82.999], ["Dallas", 32.777, -96.797], ["Denver", 39.739, -104.990],
+    ["Des Moines", 41.587, -93.625], ["Detroit", 42.331, -83.046], ["El Paso", 31.762, -106.485], ["Fargo", 46.877, -96.790], ["Great Falls", 47.500, -111.300],
+    ["Honolulu", 21.307, -157.858], ["Houston", 29.760, -95.370], ["Indianapolis", 39.768, -86.158], ["Jackson, WY", 43.480, -110.762], ["Jacksonville", 30.332, -81.656],
+    ["Kansas City", 39.100, -94.579], ["Knoxville", 35.961, -83.921], ["Las Vegas", 36.170, -115.140], ["Little Rock", 34.746, -92.290], ["Los Angeles", 34.052, -118.244],
+    ["Louisville", 38.253, -85.759], ["Memphis", 35.150, -90.049], ["Miami", 25.762, -80.192], ["Milwaukee", 43.039, -87.906], ["Minneapolis", 44.978, -93.265],
+    ["Nashville", 36.163, -86.781], ["New Orleans", 29.951, -90.072], ["New York", 40.713, -74.006], ["Norfolk", 36.851, -76.286], ["Oklahoma City", 35.468, -97.516],
+    ["Omaha", 41.257, -95.935], ["Orlando", 28.538, -81.379], ["Philadelphia", 39.953, -75.165], ["Phoenix", 33.448, -112.074], ["Pittsburgh", 40.441, -79.996],
+    ["Portland, ME", 43.659, -70.257], ["Portland, OR", 45.515, -122.679], ["Rapid City", 44.080, -103.231], ["Salt Lake City", 40.761, -111.891], ["San Antonio", 29.424, -98.494],
+    ["San Diego", 32.716, -117.161], ["San Francisco", 37.775, -122.419], ["Savannah", 32.081, -81.091], ["Seattle", 47.606, -122.332], ["Shreveport", 32.525, -93.750],
+    ["Spokane", 47.659, -117.426], ["St. Louis", 38.627, -90.199], ["Tampa", 27.951, -82.457], ["Tucson", 32.222, -110.975], ["Washington, DC", 38.907, -77.037],
+  ]) },
+  };
+  const ALL_TOWNS = Object.values(REGIONS).flatMap(r => r.towns);
+  const winds = () => REGIONS[S.region].winds;
 
   // Illustrative target set. kind: mil = military, ind = industry (both ground bursts), city = airburst.
   const T = (name, lat, lon, kind, sub) => ({ name, lat, lon, kind, sub, kt: kind === "ind" ? 100 : 300, burst: kind === "city" ? "air" : "ground" });
@@ -281,17 +326,46 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     T("Glasgow", 55.864, -4.252, "city", "City"), T("Liverpool", 53.408, -2.991, "city", "City"), T("Leeds", 53.800, -1.549, "city", "City"),
     T("Edinburgh", 55.953, -3.189, "city", "City"), T("Bristol", 51.455, -2.588, "city", "City"), T("Cardiff", 51.481, -3.179, "city", "City"),
     T("Belfast", 54.597, -5.930, "city", "City"), T("Newcastle", 54.978, -1.618, "city", "City"), T("Sheffield", 53.381, -1.470, "city", "City"),
+    // Europe
+    T("Kleine Brogel", 51.168, 5.470, "mil", "Air base"), T("Volkel", 51.657, 5.708, "mil", "Air base"), T("Büchel", 50.174, 7.063, "mil", "Air base"),
+    T("Ramstein", 49.437, 7.600, "mil", "Air base"), T("Aviano", 46.031, 12.597, "mil", "Air base"), T("Ghedi", 45.432, 10.268, "mil", "Air base"),
+    T("Incirlik", 37.002, 35.426, "mil", "Air base"), T("Île Longue", 48.306, -4.513, "mil", "Submarine base"), T("Istres", 43.523, 4.924, "mil", "Air base"),
+    T("Saint-Dizier", 48.636, 4.899, "mil", "Air base"), T("Avord", 47.053, 2.633, "mil", "Air base"), T("Toulon", 43.118, 5.917, "mil", "Naval base"),
+    T("Rota", 36.645, -6.349, "mil", "Naval base"), T("Naples NATO", 40.880, 14.290, "mil", "Joint command"), T("SHAPE, Mons", 50.497, 3.983, "mil", "NATO command"),
+    T("NATO HQ", 50.877, 4.426, "mil", "Headquarters"), T("Brunssum", 50.940, 5.980, "mil", "Joint command"), T("Stuttgart", 48.730, 9.080, "mil", "US command"),
+    T("Redzikowo", 54.479, 17.098, "mil", "Missile defence"), T("Deveselu", 44.087, 24.389, "mil", "Missile defence"), T("Rzeszów", 50.110, 22.020, "mil", "Logistics hub"),
+    T("Souda Bay", 35.533, 24.149, "mil", "Naval base"), T("RAF Akrotiri", 34.590, 32.988, "mil", "Air base"),
+    T("Rotterdam port", 51.900, 4.350, "ind", "Port, refineries"), T("Antwerp port", 51.270, 4.330, "ind", "Port, chemicals"), T("Ludwigshafen", 49.500, 8.430, "ind", "Chemicals"), T("Fos-sur-Mer", 43.430, 4.900, "ind", "Port, refineries"),
+    T("Paris", 48.857, 2.352, "city", "Capital"), T("Berlin", 52.520, 13.405, "city", "Capital"), T("Brussels", 50.850, 4.352, "city", "Capital"), T("Rome", 41.903, 12.496, "city", "Capital"),
+    T("Madrid", 40.417, -3.704, "city", "Capital"), T("Warsaw", 52.230, 21.012, "city", "Capital"), T("Amsterdam", 52.368, 4.904, "city", "Capital"), T("Vienna", 48.208, 16.373, "city", "Capital"),
+    T("Munich", 48.135, 11.582, "city", "City"), T("Hamburg", 53.551, 9.994, "city", "City"), T("Milan", 45.464, 9.190, "city", "City"), T("Barcelona", 41.385, 2.173, "city", "City"),
+    T("Frankfurt", 50.110, 8.682, "city", "City"), T("Stockholm", 59.329, 18.069, "city", "Capital"), T("Copenhagen", 55.676, 12.568, "city", "Capital"), T("Prague", 50.075, 14.438, "city", "Capital"),
+    T("Athens", 37.984, 23.728, "city", "Capital"), T("Bucharest", 44.427, 26.103, "city", "Capital"), T("Helsinki", 60.170, 24.938, "city", "Capital"), T("Oslo", 59.914, 10.752, "city", "Capital"), T("Lisbon", 38.722, -9.139, "city", "Capital"),
+    // United States. ICBM fields spread over thousands of square miles; three area points stand in for each field.
+    T("Malmstrom AFB", 47.506, -111.183, "mil", "ICBM wing"), T("Malmstrom field N", 47.9, -110.9, "mil", "ICBM field (area)"), T("Malmstrom field E", 47.3, -110.0, "mil", "ICBM field (area)"), T("Malmstrom field S", 46.9, -110.8, "mil", "ICBM field (area)"),
+    T("Minot AFB", 48.416, -101.358, "mil", "ICBM wing, bombers"), T("Minot field N", 48.7, -101.8, "mil", "ICBM field (area)"), T("Minot field E", 48.2, -100.7, "mil", "ICBM field (area)"), T("Minot field S", 47.8, -101.6, "mil", "ICBM field (area)"),
+    T("F.E. Warren AFB", 41.133, -104.867, "mil", "ICBM wing"), T("Warren field N", 41.6, -104.5, "mil", "ICBM field (area)"), T("Warren field E", 41.2, -103.7, "mil", "ICBM field (area)"), T("Warren field S", 40.8, -104.2, "mil", "ICBM field (area)"),
+    T("Whiteman AFB", 38.727, -93.548, "mil", "Bomber base"), T("Barksdale AFB", 32.501, -93.663, "mil", "Bomber base"), T("Ellsworth AFB", 44.145, -103.103, "mil", "Bomber base"),
+    T("Dyess AFB", 32.420, -99.855, "mil", "Bomber base"), T("Offutt AFB", 41.118, -95.912, "mil", "Strategic command"), T("Cheyenne Mountain", 38.744, -104.846, "mil", "Command centre"),
+    T("Naval Base Kitsap", 47.727, -122.714, "mil", "Submarine base"), T("Kings Bay", 30.798, -81.515, "mil", "Submarine base"), T("Norfolk Naval Station", 36.946, -76.303, "mil", "Naval base"),
+    T("Naval Base San Diego", 32.684, -117.129, "mil", "Naval base"), T("Pearl Harbor", 21.354, -157.950, "mil", "Naval base"), T("Kirtland AFB", 35.040, -106.609, "mil", "Weapons storage"),
+    T("Pantex", 35.315, -101.560, "mil", "Warhead assembly"), T("Fort Bragg", 35.139, -79.006, "mil", "Army base"), T("Vandenberg", 34.733, -120.568, "mil", "Missile range"),
+    T("The Pentagon", 38.871, -77.056, "mil", "Defence HQ"), T("Raven Rock", 39.734, -77.419, "mil", "Command centre"),
+    T("Houston Ship Channel", 29.730, -95.130, "ind", "Refineries"), T("Port Arthur", 29.885, -93.940, "ind", "Refineries"), T("Baton Rouge", 30.490, -91.180, "ind", "Refinery"),
+    T("New York", 40.713, -74.006, "city", "City"), T("Washington, DC", 38.907, -77.037, "city", "Capital"), T("Los Angeles", 34.052, -118.244, "city", "City"),
+    T("Chicago", 41.878, -87.630, "city", "City"), T("Houston", 29.760, -95.370, "city", "City"), T("San Francisco", 37.775, -122.419, "city", "City"),
+    T("Seattle", 47.606, -122.332, "city", "City"), T("Boston", 42.360, -71.059, "city", "City"), T("Philadelphia", 39.953, -75.165, "city", "City"),
+    T("Atlanta", 33.749, -84.388, "city", "City"), T("Dallas", 32.777, -96.797, "city", "City"), T("Miami", 25.762, -80.192, "city", "City"),
+    T("Denver", 39.739, -104.990, "city", "City"), T("Detroit", 42.331, -83.046, "city", "City"), T("Phoenix", 33.448, -112.074, "city", "City"),
   ];
   const SCEN = {
     limited: { name: "Limited strike", sub: "Military sites only", kinds: ["mil"] },
     major: { name: "Major war", sub: "Bases, cities, industry", kinds: ["mil", "ind", "city"] },
   };
-  // Rounded UK wind climatology: share of the time the wind blows FROM each direction.
-  const WINDS = [["N", 0, 0.06], ["NE", 45, 0.07], ["E", 90, 0.08], ["SE", 135, 0.08], ["S", 180, 0.12], ["SW", 225, 0.24], ["W", 270, 0.22], ["NW", 315, 0.13]];
   const WIND_KMH = 24, TWO_WEEKS = 336;
-  const DEPTHS = [30, 50, 100], RANGES = [100, 250, 500];
+  const DEPTHS = [30, 50, 100];
 
-  const S = { lat: 51.454, lon: -0.978, place: "Reading", scen: "major", wind: 225, range: 250, depth: 50 };
+  const S = { region: "uk", lat: 51.454, lon: -0.978, place: "Reading", scen: "major", wind: 225, range: 250, depth: 50 };
 
   // ================= physics (same calibration as the nuclear simulator) =================
   const TABLES = {
@@ -335,7 +409,8 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
   const rel = (lat, lon) => ({ x: (lon - S.lon) * 111.32 * Math.cos(rad(S.lat)), y: (lat - S.lat) * 110.57 });
   const downwind = from => { const b = rad(from + 180); return { ux: Math.sin(b), uy: Math.cos(b) }; };
   const compass = deg => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(((deg % 360) + 360) % 360 / 45) % 8];
-  const active = () => TARGETS.filter(t => SCEN[S.scen].kinds.includes(t.kind));
+  // Only targets within 2,000 km can affect you; this also keeps the wind-rose maths fast.
+  const active = () => TARGETS.filter(t => SCEN[S.scen].kinds.includes(t.kind) && Math.hypot(rel(t.lat, t.lon).x, rel(t.lat, t.lon).y) < 2000);
 
   // ================= evaluation =================
   function evaluate(windFrom) {
@@ -369,7 +444,9 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
   const LVL_C = { fatal: "#ef4444", severe: "#f5a524", injury: "#e8d36a", safe: "#3ecf8e" };
 
   // ================= formatting =================
-  const fmtKm = r => r < 1 ? Math.round(r * 1000) + " m" : (r < 10 ? r.toFixed(1) : Math.round(r).toLocaleString("en-GB")) + " km";
+  const fmtKm = r => REGIONS[S.region].miles
+    ? (m => (m < 10 ? m.toFixed(1) : Math.round(m).toLocaleString("en-US")) + " mi")(r * 0.621371)
+    : r < 1 ? Math.round(r * 1000) + " m" : (r < 10 ? r.toFixed(1) : Math.round(r).toLocaleString("en-GB")) + " km";
   const fmtN = v => v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1000 ? Math.round(v).toLocaleString("en-GB") : v >= 10 ? Math.round(v) + "" : v >= 1 ? v.toFixed(1) : v >= 0.01 ? v.toFixed(2) : "<0.01";
   const fmtH = h => h < 1 ? Math.round(h * 60) + " min" : h < 48 ? h.toFixed(1).replace(/\.0$/, "") + " h" : Math.round(h / 24) + " days";
   const fmtS = s => s < 60 ? s.toFixed(1) + " s" : Math.floor(s / 60) + " min " + String(Math.round(s % 60)).padStart(2, "0") + " s";
@@ -385,10 +462,10 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
 
   function render() {
     const e = evaluate(S.wind);
-    const rose = WINDS.map(([n, deg, p]) => ({ n, deg, p, fo: deg === S.wind ? e.fo : evaluate(deg).fo }));
+    const rose = winds().map(([n, deg, p]) => ({ n, deg, p, fo: deg === S.wind ? e.fo : evaluate(deg).fo }));
     const pAt = d => rose.reduce((s, r) => s + (r.fo >= d ? r.p : 0), 0);
     const p50 = pAt(50), p200 = pAt(200), p600 = pAt(600);
-    const wp = WINDS.find(w => w[1] === S.wind);
+    const wp = winds().find(w => w[1] === S.wind);
 
     $("windOut").textContent = `From ${wp[0]} · ${WIND_KMH} km/h`;
     $("mapTitle").innerHTML = `<b>${S.place}</b> · ${SCEN[S.scen].name.toLowerCase()}`;
@@ -414,7 +491,7 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     $("riskPill").className = "pill " + riskCls; $("riskPill").textContent = risk + " risk";
     $("riskBig").textContent = `${S.place}: ${risk.toLowerCase()} risk`;
     const blastLine = e.psi >= 5 ? `You are inside the zone where most houses collapse from ${e.psiT.name}.` : e.psi >= 1 ? `The blast from ${e.psiT.name} would blow in windows and doors here.` : `You are outside the main blast zones of the targets in this scenario.`;
-    const foLine = p50 > 0 ? `In ${pct(p50)} of wind conditions, fallout from a ground burst reaches you with a harmful dose${p600 > 0 ? `, and in ${pct(p600)} it is lethal to anyone outside` : ""}.` : `With UK winds, no modelled fallout plume reaches you in this scenario, but targets outside this list or a change of plan could change that.`;
+    const foLine = p50 > 0 ? `In ${pct(p50)} of wind conditions, fallout from a ground burst reaches you with a harmful dose${p600 > 0 ? `, and in ${pct(p600)} it is lethal to anyone outside` : ""}.` : `With local winds, no modelled fallout plume reaches you in this scenario, but targets outside this list or a change of plan could change that.`;
     $("riskText").textContent = `${blastLine} ${foLine}`;
 
     // recommendation: depth buys margin against a missile that lands near you, not extra fallout protection.
@@ -428,7 +505,7 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
         : `Your nearest ground-burst target is ${isFinite(dG) ? fmtKm(dG) : "far"} away. At 30 m fallout is cut more than 100,000 times. Choose deeper if you want margin against a direct hit.`;
 
     // wind rose
-    const cx = 150, cy = 150, maxP = Math.max(...WINDS.map(w => w[2]));
+    const cx = 150, cy = 150, maxP = Math.max(...winds().map(w => w[2]));
     let svg = [40, 80, 120].map(r => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2a3350"/>`).join("");
     rose.forEach(r => {
       const len = 22 + 100 * r.p / maxP, a0 = rad(r.deg - 19), a1 = rad(r.deg + 19);
@@ -460,7 +537,7 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     // clock
     const blastS = e.psiT ? e.psiR / 0.343 : 0;
     const tl = [
-      ["T − 15 min", "Warning", "Submarine-launched missiles can arrive 10 to 15 minutes after launch. A UK Emergency Alert sounds on phones. This is all the time you have to reach a shelter.", true],
+      ["T − 15 min", "Warning", `Submarine-launched missiles can arrive 10 to 15 minutes after launch. ${REGIONS[S.region].alert} This is all the time you have to reach a shelter.`, true],
       ["T + 0", "Flash", e.psiT ? `${e.psiT.name} is hit, ${fmtKm(e.psiR)} from you. The flash arrives at the speed of light.` : "Detonations across the country."],
       ["T + " + fmtS(blastS), "Blast", e.psi >= 1 ? `The blast wave reaches you at ${fmtN(e.psi)} psi.` : `A weak pressure wave of ${fmtN(e.psi)} psi arrives. Windows may crack.`, e.psi >= 1],
       [isFinite(e.ta) ? "T + " + fmtH(e.ta) : "Hours later", "Fallout", isFinite(e.ta) ? `Fallout from ${e.foT.name} starts to land. Anyone not below ground by now takes the full dose.` : `With a ${wp[0]} wind no plume reaches you. A shift in wind could bring one.`, isFinite(e.ta)],
@@ -472,7 +549,7 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     $("timeline").innerHTML = tl.map(([t, k, p, hot]) => `<div class="tl${hot ? " hot" : ""}"><div class="t">${t} · ${k}</div><p>${p}</p></div>`).join("");
 
     // targets table
-    const rows = e.list.filter(r => r.R <= Math.max(S.range, e.list[0].R)).slice(0, 14);
+    const rows = e.list.filter(r => r.R <= Math.max(S.range, e.list.length ? e.list[0].R : 0)).slice(0, 14);
     $("targets").innerHTML = `<thead><tr><th>Target</th><th>Type</th><th>Assumed</th><th style="text-align:right">Distance</th><th style="text-align:right">Blast at you</th><th style="text-align:right">Fallout (this wind)</th></tr></thead><tbody>${rows.map(r => `<tr><td>${r.t.name}</td><td>${r.t.sub}</td><td>${r.t.kt} kt ${r.t.burst === "air" ? "airburst" : "ground burst"}</td><td class="n">${fmtKm(r.R)} ${compass(r.bearing)}</td><td class="n">${fmtN(r.psi)} psi</td><td class="n">${r.fo ? fmtDose(r.fo) : "–"}</td></tr>`).join("")}</tbody>`;
 
     draw(e);
@@ -493,7 +570,7 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     ctx.font = "600 10px 'JetBrains Mono', monospace";
     [0.25, 0.5, 0.75, 1].forEach(f => {
       ctx.beginPath(); ctx.arc(cx, cy, S.range * f * scale, 0, Math.PI * 2); ctx.strokeStyle = "rgba(143,151,173,0.14)"; ctx.lineWidth = 1; ctx.stroke();
-      ctx.fillStyle = "rgba(143,151,173,0.6)"; ctx.fillText(Math.round(S.range * f) + " km", cx + 4, cy - S.range * f * scale - 4);
+      ctx.fillStyle = "rgba(143,151,173,0.6)"; ctx.fillText(fmtKm(S.range * f), cx + 4, cy - S.range * f * scale - 4);
     });
     ctx.strokeStyle = "rgba(143,151,173,0.1)";
     ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
@@ -518,7 +595,7 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     });
     // towns for orientation
     const labelTowns = S.range <= 250;
-    TOWNS.forEach(t => {
+    ALL_TOWNS.forEach(t => {
       const p = rel(t.lat, t.lon); if (Math.abs(p.x) > S.range * 1.3 || Math.abs(p.y) > S.range * 1.3) return;
       ctx.fillStyle = "rgba(143,151,173,0.55)"; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 1.8, 0, Math.PI * 2); ctx.fill();
       if (labelTowns && t.name !== S.place && !TARGETS.some(x => x.name === t.name && SCEN[S.scen].kinds.includes(x.kind))) { ctx.font = "500 10px Archivo, sans-serif"; ctx.fillText(t.name, X(p.x) + 4, Y(p.y) + 3); }
@@ -528,7 +605,7 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
       const x = X(o.p.x), y = Y(o.p.y);
       ctx.fillStyle = o.t.burst === "ground" ? "#ef4444" : "#f5a524";
       if (o.t.burst === "ground") ctx.fillRect(x - 3, y - 3, 6, 6); else { ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill(); }
-      if (S.range <= 250 || o.t.kind === "city") { ctx.font = "600 10px 'JetBrains Mono', monospace"; ctx.fillText(o.t.name.replace(/^(HMNB|RAF|AWE|RNAD) /, ""), x + 6, y - 5); }
+      if (S.range <= 250 || o.t.kind === "city") { ctx.font = "600 10px 'JetBrains Mono', monospace"; ctx.fillText(o.t.name.replace(/^(HMNB|RAF|AWE|RNAD) /, "").replace(/ AFB$/, ""), x + 6, y - 5); }
     });
     // wind arrow
     ctx.save(); ctx.translate(w - 40, 40); ctx.rotate(rad(S.wind + 180));
@@ -565,11 +642,25 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     });
   }
   const sel = $("town");
-  sel.innerHTML = `<option value="" hidden>Custom point</option>` + TOWNS.map((t, i) => `<option value="${i}"${t.name === S.place ? " selected" : ""}>${t.name}</option>`).join("");
-  sel.onchange = () => { const t = TOWNS[+sel.value]; Object.assign(S, { lat: t.lat, lon: t.lon, place: t.name }); $("posHint").textContent = "You can also click anywhere on the map."; render(); };
+  const towns = () => REGIONS[S.region].towns;
+  function regionControls() {
+    const R = REGIONS[S.region];
+    sel.innerHTML = `<option value="" hidden>Custom point</option>` + towns().map((t, i) => `<option value="${i}"${t.name === S.place ? " selected" : ""}>${t.name}</option>`).join("");
+    if (!towns().some(t => t.name === S.place)) sel.value = "";
+    $("winds").innerHTML = ""; chipRow($("winds"), winds().map(([n, d, p]) => [d, `${n}<small>${pct(p)}</small>`]), "wind");
+    if (!R.ranges.includes(S.range)) S.range = R.ranges[1];
+    $("ranges").innerHTML = ""; chipRow($("ranges"), R.ranges.map(r => [r, fmtKm(r)]), "range");
+    $("windHint").textContent = `The percentage is how often the wind blows from that direction. ${R.windNote}`;
+    $("region").querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.r === S.region));
+  }
+  Object.entries(REGIONS).forEach(([k, R]) => {
+    const b = document.createElement("button"); b.className = "chip"; b.dataset.r = k; b.innerHTML = `${R.name}<small>${R.sub}</small>`;
+    b.onclick = () => { S.region = k; const t = R.towns.find(x => x.name === R.start); Object.assign(S, { lat: t.lat, lon: t.lon, place: t.name }); regionControls(); render(); };
+    $("region").appendChild(b);
+  });
+  sel.onchange = () => { const t = towns()[+sel.value]; Object.assign(S, { lat: t.lat, lon: t.lon, place: t.name }); $("posHint").textContent = "You can also click anywhere on the map."; render(); };
   chipRow($("scen"), Object.entries(SCEN).map(([k, v]) => [k, `${v.name}<small>${v.sub}</small>`]), "scen");
-  chipRow($("winds"), WINDS.map(([n, d, p]) => [d, `${n}<small>${pct(p)}</small>`]), "wind");
-  chipRow($("ranges"), RANGES.map(r => [r, r + " km"]), "range");
+  regionControls();
   chipRow($("depthChips"), DEPTHS.map(d => [d, d + " m"]), "depth");
 
   $("geo").onclick = () => {
@@ -577,8 +668,11 @@ a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
     $("posHint").textContent = "Finding you…";
     navigator.geolocation.getCurrentPosition(p => {
       Object.assign(S, { lat: p.coords.latitude, lon: p.coords.longitude, place: "Your location" }); sel.value = "";
-      const inUK = S.lat > 49.8 && S.lat < 61 && S.lon > -8.7 && S.lon < 2;
-      $("posHint").textContent = inUK ? "Using your device location. Nothing is sent anywhere." : "You appear to be outside the UK. This model only includes UK targets.";
+      // Rough boxes: the UK without the Republic of Ireland, then mainland Europe, then North America and Hawaii.
+      const inUK = S.lat > 49.8 && S.lat < 61 && S.lon > -8.2 && S.lon < 2 && !(S.lon < -5.4 && S.lat < 54.1);
+      const covered = (S.lon < -30 && S.lon > -170 && S.lat > 18) || (S.lon >= -30 && S.lon < 45 && S.lat > 30 && S.lat < 72);
+      S.region = S.lon < -30 ? "us" : inUK ? "uk" : "eu"; regionControls();
+      $("posHint").textContent = covered ? "Using your device location. Nothing is sent anywhere." : "You appear to be outside the UK, Europe and the USA. Only targets in those regions are modelled.";
       render();
     }, () => { $("posHint").textContent = "Could not get your location. Pick a town or click the map."; }, { timeout: 10000 });
   };

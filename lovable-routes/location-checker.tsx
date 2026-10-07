@@ -12,9 +12,9 @@ export const Route = createFileRoute("/location-checker")({
   head: () => ({
     meta: [
       { title: "Fortes Location Checker" },
-      { name: "description", content: "Pick your town and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits." },
+      { name: "description", content: "Pick your town in the UK, Europe or the USA and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits." },
       { property: "og:title", content: "Fortes Location Checker" },
-      { property: "og:description", content: "Pick your town and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits." },
+      { property: "og:description", content: "Pick your town in the UK, Europe or the USA and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits." },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "/location-checker/og.png" },
     ],

@@ -7,7 +7,7 @@ Self-contained simulators and tools for Fortes underground bunkers. The root `in
 | `ww3-simulator` | One family through a third world war, from day -14 to year 3, next to Fortes members sheltering 30, 50 or 100 m down |
 | `nuclear-simulator` | Blast rings, fallout plume and two-week radiation dose for a chosen weapon, wind and position |
 | `blast-simulator` | Blast, heat and radiation at a chosen distance, in the open, in a brick house and in a Fortes shelter |
-| `location-checker` | Pick a UK town and see the nearest likely targets, fallout odds for each wind direction, a risk rating and a recommended shelter depth |
+| `location-checker` | Pick a town in the UK, Europe or the USA (or use your device location) and see the nearest likely targets, fallout odds for each wind direction, a risk rating and a recommended shelter depth |
 | `shelter-walkthrough` | Clickable cutaway of a shelter at 30, 50 or 100 m, with room details, air, water and power systems, and a direct-hit test |
 | `air-power-simulator` | CO₂, oxygen, temperature, battery and fuel hour by hour for a sealed shelter |
 | `threat-simulator` | Pandemic, grid collapse, chemical release and civil unrest, day by day at home and in a Fortes shelter |
