@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Air and Power</title>
+<meta name="description" content="Set how many people, how big the shelter and how much air, battery and fuel it has. Watch CO2, oxygen, temperature and power hour by hour while the shelter is sealed.">
+<meta property="og:title" content="Fortes Air and Power">
+<meta property="og:description" content="Set how many people, how big the shelter and how much air, battery and fuel it has. Watch CO2, oxygen, temperature and power hour by hour while the shelter is sealed.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/simulators/og/air-and-power.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: brand frame; controls left, four small-multiple charts right (one measure per chart, shared
+   hover time); readout, verdict and a daily table below. Single dark look by choice. */
+:root {
+  --ink: #0f1526;        /* page ground, Fortes navy */
+  --panel: #161d33;      /* raised surfaces */
+  --line: #2a3350;       /* hairlines */
+  --cream: #f3f0ea;      /* headline text */
+  --muted: #8f97ad;      /* secondary text */
+  --red: #ef4444;        /* Fortes red, the accent */
+  --amber: #f5a524;      /* warning state */
+  --green: #3ecf8e;      /* protected state */
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ink); color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 24px 40px; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: 56px; height: 56px; border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: var(--cream); }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(34px, 6vw, 68px); line-height: .95; margin: 18px 0 10px; text-wrap: balance; letter-spacing: -.01em; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 62ch; margin: 0 0 28px; font-size: 16px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.controls { display: grid; gap: 22px; }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 9px 10px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.row3 .chip { text-align: center; }
+input[type=range] { width: 100%; accent-color: var(--red); }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.btn { font-family: var(--f-display); text-transform: uppercase; font-size: 18px; letter-spacing: .04em; background: var(--red); color: var(--ink); border: 0; padding: 16px 18px; cursor: pointer; border-radius: 2px; width: 100%; }
+.btn:hover { filter: brightness(1.08); }
+
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+canvas#map { width: 100%; aspect-ratio: 16 / 10; max-width: 100%; display: block; background: #0b1020; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px 16px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(1px); }
+.legend span { color: var(--muted); }
+.legend b { font-family: var(--f-mono); font-weight: 600; margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 28px; }
+.readout > div { padding: 14px 16px 14px 0; min-width: 0; }
+.readout > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+.readout .v { font-family: var(--f-display); font-size: clamp(22px, 3vw, 30px); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 700px) { .readout { grid-template-columns: 1fr 1fr; } .readout > div:nth-child(3) { padding-left: 0; border-left: 0; } .readout > div:nth-child(n+3) { border-top: 1px solid var(--line); } }
+
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; }
+.compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card.fortes { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.card.fortes h3 { color: var(--red); }
+.verdict { font-family: var(--f-display); font-size: 26px; text-transform: uppercase; line-height: 1; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; padding: 5px 9px; border: 1px solid currentColor; width: fit-content; }
+.pill::before { content: ""; width: 7px; height: 7px; background: currentColor; }
+.st-fatal { color: var(--red); } .st-severe { color: var(--amber); } .st-injury { color: #e8d36a; } .st-safe { color: var(--green); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li span { color: var(--muted); }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.section-svg { width: 100%; height: auto; max-width: 100%; }
+
+.timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .timeline { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .timeline { grid-template-columns: 1fr; } }
+.tl { border-top: 2px solid var(--line); padding-top: 10px; min-width: 0; }
+.tl.hot { border-top-color: var(--red); }
+.tl .t { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--cream); font-variant-numeric: tabular-nums; }
+.tl p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); letter-spacing: .02em; display: flex; align-items: baseline; gap: 12px; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.row4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.row4 .chip, .row3 .chip { text-align: center; padding: 8px 4px; }
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+.chart { min-width: 0; }
+.chart .ct { display: flex; justify-content: space-between; gap: 8px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.chart .ct b { color: var(--cream); letter-spacing: .04em; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart canvas { width: 100%; height: 190px; display: block; background: #0b1020; touch-action: pan-y; cursor: crosshair; }
+.hover { font-family: var(--f-mono); font-size: 12px; color: var(--muted); min-height: 18px; }
+.hover b { color: var(--cream); font-weight: 600; }
+.key { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+.key i { width: 14px; height: 2px; display: inline-block; }
+.key i.dash { background: repeating-linear-gradient(90deg, #8f97ad 0 4px, transparent 4px 7px); }
+.events { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.events li { border-left: 2px solid var(--line); padding-left: 10px; font-size: 14px; color: var(--muted); }
+.events li.bad { border-left-color: var(--red); }
+.events li.warn { border-left-color: var(--amber); }
+.events li.good { border-left-color: var(--green); }
+.events li b { font-family: var(--f-mono); font-size: 12px; color: var(--cream); font-weight: 600; margin-right: 6px; }
+details { margin-top: 20px; }
+summary { cursor: pointer; font-family: var(--f-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+.tbl th, .tbl td { text-align: right; padding: 6px 10px 6px 0; border-top: 1px solid var(--line); white-space: nowrap; }
+.tbl th { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--red); font-weight: 600; }
+.tbl td { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; }
+.scroll { overflow-x: auto; }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
+</style>
+
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Air and power simulator</div>
+    <a class="site" href="/simulators">← ALL FORTES TOOLS</a>
+  </div>
+  <h1>Sealed in. <em>Still breathing?</em></h1>
+  <p class="lede">A shelter is only as good as its air and its power. Set the people, the space, the filtered airflow, the battery and the fuel, then watch carbon dioxide, oxygen, temperature and energy hour by hour.</p>
+
+  <div class="grid">
+    <div class="controls">
+      <div>
+        <div class="label"><span>People inside</span><output id="pplOut"></output></div>
+        <input type="range" id="ppl" min="1" max="40" aria-label="People inside">
+      </div>
+      <div>
+        <div class="label">Shelter size</div>
+        <div class="row3" id="tier" role="group" aria-label="Shelter size"></div>
+      </div>
+      <div>
+        <div class="label"><span>Filtered air per person</span><output id="qOut"></output></div>
+        <input type="range" id="q" min="0" max="30" step="1" aria-label="Filtered air per person in cubic metres per hour">
+        <div class="hint">Swiss shelter standard in filter mode: 6 m³/h per person. 0 means no fan at all.</div>
+      </div>
+      <div>
+        <div class="label"><span>Intake closed at the start</span><output id="sealOut"></output></div>
+        <input type="range" id="seal" min="0" max="72" step="1" aria-label="Hours with the air intake closed">
+        <div class="seg" style="margin-top:8px" role="group" aria-label="CO2 scrubber while closed">
+          <button class="chip" data-scrub="1">Scrubber on<small>CO₂ removed, O₂ added</small></button>
+          <button class="chip" data-scrub="0">No scrubber<small>Air just recirculates</small></button>
+        </div>
+      </div>
+      <div>
+        <div class="label"><span>Battery bank</span><output id="batOut"></output></div>
+        <input type="range" id="bat" min="10" max="300" step="10" aria-label="Battery bank in kilowatt hours">
+      </div>
+      <div>
+        <div class="label"><span>Diesel stored</span><output id="fuelOut"></output></div>
+        <input type="range" id="fuel" min="0" max="30000" step="250" aria-label="Diesel stored in litres">
+      </div>
+      <div>
+        <div class="label">Generator breaks down</div>
+        <div class="row3" id="fail" role="group" aria-label="Generator breakdown"></div>
+      </div>
+      <div>
+        <div class="label">Outside air</div>
+        <div class="row3" id="outside" role="group" aria-label="Outside air temperature"></div>
+      </div>
+      <div>
+        <div class="label">Run for</div>
+        <div class="row4" id="dur" role="group" aria-label="Simulation length"></div>
+      </div>
+    </div>
+
+    <div class="mapwrap">
+      <div class="maphead"><span id="title"></span><span>Hover or drag across a chart</span></div>
+      <div class="hover" id="hover" aria-live="polite"></div>
+      <div class="charts">
+        <div class="chart"><div class="ct"><span>Carbon dioxide · ppm</span><b id="v-co2"></b></div><canvas id="ch-co2" aria-label="Carbon dioxide over time"></canvas></div>
+        <div class="chart"><div class="ct"><span>Oxygen · %</span><b id="v-o2"></b></div><canvas id="ch-o2" aria-label="Oxygen over time"></canvas></div>
+        <div class="chart"><div class="ct"><span>Air temperature · °C</span><b id="v-temp"></b></div><canvas id="ch-temp" aria-label="Temperature over time"></canvas></div>
+        <div class="chart"><div class="ct"><span>Energy left · %</span><b id="v-en"></b></div><canvas id="ch-en" aria-label="Battery and fuel over time"></canvas></div>
+      </div>
+      <div class="key"><span><i style="background:#1d9bd6"></i>This shelter · battery</span><span><i style="background:#a855f7"></i>Fuel</span><span><i class="dash"></i>Same room, sealed, no fan</span><span><i style="background:#4a5578"></i>Limits</span></div>
+    </div>
+  </div>
+
+  <div class="readout">
+    <div><div class="k">Air stays safe</div><div class="v" id="r-air"></div><div class="s" id="r-air-s"></div></div>
+    <div><div class="k">Peak CO₂</div><div class="v" id="r-co2"></div><div class="s" id="r-co2-s"></div></div>
+    <div><div class="k">Power lasts</div><div class="v" id="r-pow"></div><div class="s" id="r-pow-s"></div></div>
+    <div><div class="k">Sealed room, no fan</div><div class="v" id="r-seal"></div><div class="s">until CO₂ reaches 3%, headaches and panting</div></div>
+  </div>
+
+  <h2>What happened</h2>
+  <ul class="events" id="events"></ul>
+
+  <details>
+    <summary>Day-by-day table</summary>
+    <div class="scroll"><table class="tbl" id="daily"></table></div>
+  </details>
+
+  <h2>Why the air matters most</h2>
+  <div class="compare">
+    <div class="card"><h3>Carbon dioxide</h3><p>Each person breathes out about 18 litres of CO₂ an hour. In a closed room it builds up long before oxygen runs short. Above 1% people feel drowsy, at 3% they get headaches and pant, and above 5% it is dangerous.</p></div>
+    <div class="card"><h3>Heat</h3><p>Every person gives off about as much heat as an 80 W bulb, and every appliance ends up as heat too. Deep rock stays at 11 to 13 °C all year, but it soaks up heat slowly, so a crowded shelter warms up over days.</p></div>
+    <div class="card fortes"><h3>The Fortes answer</h3><p>Blast valves and NBC filters bring in clean outside air and keep the shelter at slight overpressure. A battery bank runs the fans, with two generators and stored fuel to recharge it, and a hand-crank fan if everything else fails.</p></div>
+  </div>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="/simulators">Home</a><a href="/simulators/ww3-scenario">WW3</a><a href="/simulators/nuclear-fallout">Nuclear</a><a href="/simulators/blast-impact">Blast</a><a href="/simulators/multi-threat">Threats</a><a href="/simulators/shelter-walkthrough">Walkthrough</a><a href="/simulators/depth-explained">Depth</a><a href="/simulators/air-and-power" aria-current="page">Air and power</a><a href="/simulators/shelter-sizer">Sizer</a><a href="/simulators/supplies-calculator">Supplies</a><a href="/simulators/readiness-quiz">Quiz</a><a href="/simulators/location-checker">Location</a></nav>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Talk to us about air and power → <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Educational model only. Each person produces 0.018 m³ of CO₂ and uses 0.021 m³ of O₂ an hour at rest, and gives off 80 W of heat. Air volume is 80% of floor area × 2.6 m. Heat flows to rock at 11 to 13 °C through the walls and out with the ventilation air; electric heating and cooling run through a heat pump while there is power. The generator runs when the battery falls below 25% and stops at 95%, using 0.3 litres of diesel per kWh. With no power the fans stop, and people turn a hand-crank fan for about 3 m³/h each. Limits: UK workplace exposure limit for CO₂ 5,000 ppm (8 hours); oxygen deficiency below 19.5%. Real shelters vary with design, airtightness, humidity and activity. Figures are illustrative, not a Fortes guarantee.</p>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const TIERS = { compact: { name: "Compact", sub: "80 m²", area: 80, gen: 10 }, family: { name: "Family", sub: "160 m²", area: 160, gen: 15 }, estate: { name: "Estate", sub: "320 m²", area: 320, gen: 25 } };
+  const OUTSIDE = { winter: { name: "Winter", sub: "2 °C", t: 2 }, summer: { name: "Summer", sub: "22 °C", t: 22 }, nwinter: { name: "Nuclear winter", sub: "−10 °C", t: -10 } };
+  const FAILS = { none: { name: "Never", h: Infinity }, d3: { name: "Day 3", h: 72 }, d14: { name: "Day 14", h: 336 } };
+  const DURS = { d3: { name: "3 days", h: 72 }, w2: { name: "2 weeks", h: 336 }, m3: { name: "3 months", h: 2190 }, y1: { name: "1 year", h: 8760 } };
+  const S = { ppl: 8, tier: "family", q: 10, seal: 0, scrub: 1, bat: 60, fuel: 4000, fail: "none", outside: "winter", dur: "w2", hover: null };
+
+  // ================= model =================
+  const CO2_OUT = 420e-6, O2_OUT = 0.209, G_CO2 = 0.018, C_O2 = 0.021, HEAT_P = 0.08; // m³/h, m³/h, kW per person
+  const T_ROCK = 12, L_PER_KWH = 0.3, CRANK = 3;                                     // °C, l/kWh, m³/h per person
+
+  function simulate() {
+    const tier = TIERS[S.tier], N = S.ppl, A = tier.area, V = A * 2.6 * 0.8, H = DURS[S.dur].h;
+    const UA = 0.00075 * A, Cth = 0.3 * A;          // kW/K to rock, kWh/K thermal mass
+    const Tout = OUTSIDE[S.outside].t, failH = FAILS[S.fail].h, genKW = tier.gen;
+    const hvacMax = 0.04 * A;                      // kW thermal
+    const dt = H > 2000 ? 0.25 : 0.05, every = Math.round(1 / dt);
+    let co2 = CO2_OUT, o2 = O2_OUT, T = T_ROCK, bat = S.bat, fuel = S.fuel, genOn = false;
+    const out = { t: [], co2: [], o2: [], T: [], bat: [], fuel: [], V, events: [] };
+    let firstUnsafe = null, batEmpty = null, fuelEmpty = null, peak = CO2_OUT, peakAt = 0, crank = false, genFailed = false;
+    const ev = (t, cls, text) => out.events.push({ t, cls, text });
+    if (S.seal > 0) ev(0, "warn", `Intake closed for ${S.seal} h to keep out the heaviest fallout.${S.scrub ? " The CO₂ scrubber and oxygen supply run." : " Air only recirculates."}`);
+    for (let i = 0, steps = Math.round(H / dt); i <= steps; i++) {
+      const t = i * dt;
+      if (i % every === 0) { out.t.push(t); out.co2.push(co2 * 1e6); out.o2.push(o2 * 100); out.T.push(T); out.bat.push(100 * bat / S.bat); out.fuel.push(S.fuel ? 100 * fuel / S.fuel : 0); }
+      const sealed = t < S.seal, day = (t % 24) >= 7 && (t % 24) < 23;
+      const powered = bat > 0;
+      // airflow
+      let Q = sealed ? 0 : powered ? S.q * N : CRANK * N * (day ? 1 : 0.3);
+      if (!powered && !crank && !sealed) { crank = true; ev(t, "bad", "Batteries flat. The fans stop and people take turns on the hand-crank fan."); }
+      // electrical loads (kW)
+      const scrubbing = sealed && S.scrub && powered;
+      let base = 0.001 * S.q * N * (sealed ? 0 : 1) + (day ? 0.004 : 0.001) * A + 0.15 + 0.04 * N + 0.1 + 0.1 + 0.02 * N + (scrubbing ? 0.2 : 0);
+      // heat balance and heat pump
+      const gains = HEAT_P * N + 0.9 * base;
+      const loss = UA * (T - T_ROCK) + 0.000335 * Q * (T - Tout);
+      let hvac = 0;
+      if (powered) { const net = gains - loss; if (T < 18) hvac = Math.min(hvacMax, Math.max(0, (18 - T) * Cth / 2 - net)); else if (T > 24) hvac = -Math.min(hvacMax, Math.max(0, (T - 24) * Cth / 2 + net)); } // reach the set point in ~2 h, capped
+      const load = powered ? base + Math.abs(hvac) / 3 : 0;
+      T += dt * ((powered ? gains : HEAT_P * N) - loss + hvac) / Cth;
+      // gases: exact first-order update towards the ventilated steady state
+      const gC = scrubbing ? 0 : G_CO2 * N, gO = scrubbing ? 0 : C_O2 * N;
+      if (Q > 0) { const k = Math.exp(-Q * dt / V); co2 = (CO2_OUT + gC / Q) + (co2 - CO2_OUT - gC / Q) * k; o2 = (O2_OUT - gO / Q) + (o2 - O2_OUT + gO / Q) * k; }
+      else { co2 += gC * dt / V; o2 -= gO * dt / V; }
+      co2 = Math.min(co2, 0.3); o2 = Math.max(o2, 0.05);
+      // power
+      if (!genFailed && t >= failH) { genFailed = true; genOn = false; ev(t, "bad", "Generator breaks down. The shelter runs on the battery alone."); }
+      const canGen = !genFailed && fuel > 0;
+      if (canGen && bat < 0.25 * S.bat) genOn = true;
+      if (genOn && (bat >= 0.95 * S.bat || !canGen)) genOn = false;
+      if (genOn) { const kwh = genKW * dt; fuel = Math.max(0, fuel - kwh * L_PER_KWH); bat = Math.min(S.bat, bat + (genKW - load) * dt); if (fuel === 0 && fuelEmpty == null) { fuelEmpty = t; ev(t, "warn", "Diesel runs out. Whatever is left in the battery is all there is."); } }
+      else bat = Math.max(0, bat - load * dt);
+      if (bat === 0 && batEmpty == null) batEmpty = t;
+      if (co2 > peak) { peak = co2; peakAt = t; }
+      if (firstUnsafe == null && (co2 > 0.03 || o2 < 0.16)) { firstUnsafe = t; ev(t, "bad", `Air becomes dangerous: CO₂ ${fmtPpm(co2 * 1e6)}, O₂ ${(o2 * 100).toFixed(1)}%.`); }
+      if (S.seal > 0 && Math.abs(t - S.seal) < dt / 2) ev(t, "good", "Intake reopens. Filtered outside air flushes the shelter.");
+    }
+    Object.assign(out, { firstUnsafe, batEmpty, fuelEmpty, peak: peak * 1e6, peakAt, H, N });
+    out.sealedNoFan = V * (0.03 - CO2_OUT) / (G_CO2 * N);
+    // reference line: same room, sealed, nobody cranking
+    out.ref = out.t.map(t => Math.min(3e5, (CO2_OUT + G_CO2 * N * t / V) * 1e6));
+    out.events.sort((a, b) => a.t - b.t);
+    return out;
+  }
+
+  // ================= formatting =================
+  const fmtPpm = v => Math.round(v).toLocaleString("en-GB") + " ppm";
+  const fmtH = h => h < 1 ? Math.round(h * 60) + " min" : h < 48 ? (h < 10 ? h.toFixed(1).replace(/\.0$/, "") : Math.round(h)) + " h" : h < 24 * 60 ? Math.round(h / 24) + " days" : (h / 24 / 30.4).toFixed(1).replace(/\.0$/, "") + " months";
+  const fmtWhen = h => { const d = Math.floor(h / 24) + 1, hh = Math.floor(h % 24), mm = Math.round((h % 1) * 60) % 60; return `Day ${d}, ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`; };
+
+  // ================= charts =================
+  const CH = {
+    co2: { cv: $("ch-co2"), get: r => [r.co2], ref: true, lines: [[1000, "1,000 stuffy"], [5000, "5,000 workplace limit"], [30000, "30,000 headache"], [50000, "50,000 danger"]], min: () => 0, max: r => Math.max(2000, ...r.co2) * 1.1, fmt: v => v >= 1000 ? (v / 1000).toFixed(v >= 1e4 ? 0 : 1) + "k" : Math.round(v) + "" },
+    o2: { cv: $("ch-o2"), get: r => [r.o2], lines: [[19.5, "19.5 deficient"], [16, "16 impaired"]], min: r => Math.min(15, ...r.o2) - 0.5, max: () => 21.5, fmt: v => v.toFixed(1) },
+    temp: { cv: $("ch-temp"), get: r => [r.T], lines: [[18, "18 comfort"], [26, "26 warm"], [32, "32 heat stress"]], min: r => Math.min(10, ...r.T) - 1, max: r => Math.max(28, ...r.T) + 1, fmt: v => v.toFixed(0) },
+    en: { cv: $("ch-en"), get: r => [r.bat, r.fuel], two: true, lines: [], min: () => 0, max: () => 105, fmt: v => Math.round(v) + "" },
+  };
+  const COLORS = ["#1d9bd6", "#a855f7"];
+  let run = null;
+
+  function drawChart(key) {
+    const c = CH[key], cv = c.cv, ctx = cv.getContext("2d");
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (!w) return;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, w, h);
+    const L = 40, R = 10, T = 10, B = 22, pw = w - L - R, ph = h - T - B;
+    const lo = c.min(run), hi = c.max(run), H = run.H;
+    const X = t => L + pw * t / H, Y = v => T + ph * (1 - (Math.min(Math.max(v, lo), hi) - lo) / (hi - lo));
+    c.view = { L, pw, X, H };
+    // grid + axis labels
+    ctx.font = "500 10px 'JetBrains Mono', monospace"; ctx.fillStyle = "#8f97ad"; ctx.strokeStyle = "rgba(143,151,173,0.12)"; ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, y = Y(v); ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke(); ctx.textAlign = "right"; ctx.fillText(c.fmt(v), L - 5, y + 3); }
+    const tick = H <= 72 ? 12 : H <= 336 ? 48 : H <= 2190 ? 24 * 14 : 24 * 60;
+    ctx.textAlign = "center";
+    for (let t = 0; t <= H + 0.01; t += tick) ctx.fillText(H <= 72 ? t + "h" : "d" + Math.round(t / 24), X(t), h - 6);
+    // limit lines
+    c.lines.forEach(([v, n]) => { if (v <= lo || v >= hi) return; const y = Y(v); ctx.strokeStyle = "#4a5578"; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke(); ctx.setLineDash([]); ctx.textAlign = "right"; ctx.fillStyle = "#8f97ad"; ctx.fillText(n, w - R - 2, y - 4); });
+    // seal window
+    if (S.seal > 0) { ctx.fillStyle = "rgba(245,165,36,0.07)"; ctx.fillRect(X(0), T, X(Math.min(S.seal, H)) - X(0), ph); }
+    // reference (sealed room, no fan)
+    if (c.ref) { ctx.strokeStyle = "#8f97ad"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]); ctx.beginPath(); run.ref.forEach((v, i) => { const x = X(run.t[i]), y = Y(v); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); ctx.setLineDash([]); }
+    // series
+    c.get(run).forEach((s, k) => {
+      ctx.strokeStyle = COLORS[k]; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.beginPath();
+      s.forEach((v, i) => { const x = X(run.t[i]), y = Y(v); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    });
+    if (c.two) { // direct labels at the line ends
+      ctx.font = "600 10px 'JetBrains Mono', monospace"; ctx.textAlign = "left";
+      const lb = [["BATTERY", run.bat], ["FUEL", run.fuel]].map(([n, s]) => [n, Y(s[s.length - 1])]);
+      if (Math.abs(lb[0][1] - lb[1][1]) < 12) lb[1][1] = lb[0][1] + (lb[1][1] >= lb[0][1] ? 12 : -12);
+      lb.forEach(([n, y], k) => { ctx.fillStyle = "#f3f0ea"; const tw = ctx.measureText(n).width; ctx.fillText(n, Math.max(L + 2, w - R - tw - 2), Math.max(T + 9, Math.min(y - 4, T + ph - 2))); });
+    }
+    // hover crosshair
+    if (S.hover != null) {
+      const i = Math.min(run.t.length - 1, Math.max(0, Math.round(S.hover / (run.t[1] || 1)))), x = X(run.t[i]);
+      ctx.strokeStyle = "rgba(243,240,234,0.5)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T + ph); ctx.stroke();
+      c.get(run).forEach((s, k) => { ctx.fillStyle = COLORS[k]; ctx.strokeStyle = "#0b1020"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, Y(s[i]), 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+    }
+  }
+  function drawAll() { Object.keys(CH).forEach(drawChart); hoverText(); }
+  function idxAt(t) { return Math.min(run.t.length - 1, Math.max(0, Math.round(t / (run.t[1] || 1)))); }
+  function hoverText() {
+    const i = S.hover == null ? run.t.length - 1 : idxAt(S.hover);
+    $("v-co2").textContent = fmtPpm(run.co2[i]); $("v-o2").textContent = run.o2[i].toFixed(2) + "%";
+    $("v-temp").textContent = run.T[i].toFixed(1) + " °C"; $("v-en").textContent = `bat ${Math.round(run.bat[i])}% · fuel ${Math.round(run.fuel[i])}%`;
+    $("hover").innerHTML = `<b>${S.hover == null ? "End of run" : fmtWhen(run.t[i])}</b> · CO₂ <b>${fmtPpm(run.co2[i])}</b> · O₂ <b>${run.o2[i].toFixed(2)}%</b> · <b>${run.T[i].toFixed(1)} °C</b> · battery <b>${Math.round(run.bat[i])}%</b> · fuel <b>${Math.round(run.fuel[i])}%</b>`;
+  }
+  Object.values(CH).forEach(c => {
+    const move = ev => { const r = c.cv.getBoundingClientRect(), v = c.view; if (!v) return; S.hover = Math.max(0, Math.min(v.H, (ev.clientX - r.left - v.L) / v.pw * v.H)); drawAll(); };
+    c.cv.addEventListener("pointermove", move); c.cv.addEventListener("pointerdown", move);
+    c.cv.addEventListener("pointerleave", () => { S.hover = null; drawAll(); });
+  });
+
+  // ================= render =================
+  function render() {
+    run = simulate();
+    const N = S.ppl, tier = TIERS[S.tier];
+    $("pplOut").textContent = N; $("qOut").textContent = S.q + " m³/h"; $("sealOut").textContent = S.seal ? S.seal + " h" : "Open";
+    $("batOut").textContent = S.bat + " kWh"; $("fuelOut").textContent = S.fuel.toLocaleString("en-GB") + " l";
+    $("title").innerHTML = `<b>${N} people</b> · ${tier.name.toLowerCase()} ${tier.sub} · ${Math.round(run.V)} m³ of air`;
+    document.querySelectorAll("[data-scrub]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.scrub === S.scrub));
+
+    $("r-air").textContent = run.firstUnsafe == null ? "Whole run" : fmtH(run.firstUnsafe);
+    $("r-air-s").textContent = run.firstUnsafe == null ? `CO₂ stays below 3% and O₂ above 16% for ${DURS[S.dur].name}` : "until CO₂ passes 3% or O₂ drops below 16%";
+    $("r-co2").textContent = fmtPpm(run.peak);
+    $("r-co2-s").textContent = (run.peak < 1000 ? "Fresh" : run.peak < 5000 ? "Stuffy but safe" : run.peak < 30000 ? "Above the workplace limit" : "Dangerous") + (run.peak > 1000 ? ` · ${fmtWhen(run.peakAt).toLowerCase()}` : "");
+    $("r-pow").textContent = run.batEmpty == null ? "Whole run" : fmtH(run.batEmpty);
+    $("r-pow-s").textContent = run.batEmpty == null ? `${Math.round(run.fuel[run.fuel.length - 1])}% of the diesel left at the end` : run.fuelEmpty != null ? "after the diesel ran out" : "battery flat with the generator down";
+    $("r-seal").textContent = fmtH(run.sealedNoFan);
+
+    const evs = [...run.events];
+    if (!evs.some(e => e.cls === "bad")) evs.push({ t: run.H, cls: "good", text: `${N} people breathe safely for ${DURS[S.dur].name}. Peak CO₂ ${fmtPpm(run.peak)}, temperature ${Math.min(...run.T).toFixed(0)} to ${Math.max(...run.T).toFixed(0)} °C.` });
+    if (S.q > 0 && S.q < 4) evs.push({ t: 0, cls: "warn", text: `${S.q} m³/h per person is below the 6 m³/h shelter standard. CO₂ settles near ${fmtPpm(420 + 18000 / S.q)}.` });
+    evs.sort((a, b) => a.t - b.t);
+    $("events").innerHTML = evs.map(e => `<li class="${e.cls}"><b>${fmtWhen(e.t)}</b>${e.text}</li>`).join("");
+
+    // daily table
+    const days = Math.ceil(run.H / 24), stepD = Math.max(1, Math.ceil(days / 20));
+    let rows = "";
+    for (let d = 0; d < days; d += stepD) {
+      const a = idxAt(d * 24), b = idxAt(Math.min(run.H, (d + stepD) * 24)), sl = k => run[k].slice(a, b + 1);
+      rows += `<tr><td>Day ${d + 1}${stepD > 1 ? "–" + Math.min(days, d + stepD) : ""}</td><td>${fmtPpm(Math.max(...sl("co2")))}</td><td>${Math.min(...sl("o2")).toFixed(2)}%</td><td>${Math.max(...sl("T")).toFixed(1)} °C</td><td>${Math.round(run.bat[b])}%</td><td>${Math.round(run.fuel[b])}%</td></tr>`;
+    }
+    $("daily").innerHTML = `<thead><tr><th>Period</th><th>Peak CO₂</th><th>Lowest O₂</th><th>Warmest</th><th>Battery at end</th><th>Fuel at end</th></tr></thead><tbody>${rows}</tbody>`;
+    drawAll();
+  }
+
+  // ================= wiring =================
+  function chips(el, obj, key) {
+    Object.entries(obj).forEach(([k, v]) => {
+      const b = document.createElement("button"); b.className = "chip"; b.innerHTML = v.name + (v.sub ? `<small>${v.sub}</small>` : ""); b.setAttribute("aria-pressed", S[key] === k);
+      b.onclick = () => { S[key] = k; el.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b)); render(); };
+      el.appendChild(b);
+    });
+  }
+  chips($("tier"), TIERS, "tier"); chips($("fail"), FAILS, "fail"); chips($("outside"), OUTSIDE, "outside"); chips($("dur"), DURS, "dur");
+  [["ppl", "ppl"], ["q", "q"], ["seal", "seal"], ["bat", "bat"], ["fuel", "fuel"]].forEach(([id, k]) => { $(id).value = S[k]; $(id).oninput = e => { S[k] = +e.target.value; render(); }; });
+  document.querySelectorAll("[data-scrub]").forEach(b => b.onclick = () => { S.scrub = +b.dataset.scrub; render(); });
+  new ResizeObserver(() => run && drawAll()).observe($("ch-co2"));
+  if (document.fonts) document.fonts.ready.then(() => run && drawAll());
+  render();
+})();
+</script>
+</body>
+</html>

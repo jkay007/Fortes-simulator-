@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Shelter Sizer</title>
+<meta name="description" content="Tell us who is coming, how long you want to stay down and how you want to live. Get a shelter floor area, the air, water, power and food it needs, and an indicative budget.">
+<meta property="og:title" content="Fortes Shelter Sizer">
+<meta property="og:description" content="Tell us who is coming, how long you want to stay down and how you want to live. Get a shelter floor area, the air, water, power and food it needs, and an indicative budget.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/simulators/og/shelter-sizer.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: brand frame; household and brief left, the result right (headline area, zone bar,
+   systems); spec table and budget below. Single dark look by choice, matching the simulators. */
+:root {
+  --ink: #0f1526;        /* page ground, Fortes navy */
+  --panel: #161d33;      /* raised surfaces */
+  --line: #2a3350;       /* hairlines */
+  --cream: #f3f0ea;      /* headline text */
+  --muted: #8f97ad;      /* secondary text */
+  --red: #ef4444;        /* Fortes red, the accent */
+  --amber: #f5a524;      /* warning state */
+  --green: #3ecf8e;      /* protected state */
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ink); color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 24px 40px; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: 56px; height: 56px; border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: var(--cream); }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(34px, 6vw, 68px); line-height: .95; margin: 18px 0 10px; text-wrap: balance; letter-spacing: -.01em; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 62ch; margin: 0 0 28px; font-size: 16px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.controls { display: grid; gap: 22px; }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 9px 10px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.row3 .chip { text-align: center; }
+input[type=range] { width: 100%; accent-color: var(--red); }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.btn { font-family: var(--f-display); text-transform: uppercase; font-size: 18px; letter-spacing: .04em; background: var(--red); color: var(--ink); border: 0; padding: 16px 18px; cursor: pointer; border-radius: 2px; width: 100%; }
+.btn:hover { filter: brightness(1.08); }
+
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+canvas#map { width: 100%; aspect-ratio: 16 / 10; max-width: 100%; display: block; background: #0b1020; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px 16px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(1px); }
+.legend span { color: var(--muted); }
+.legend b { font-family: var(--f-mono); font-weight: 600; margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 28px; }
+.readout > div { padding: 14px 16px 14px 0; min-width: 0; }
+.readout > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+.readout .v { font-family: var(--f-display); font-size: clamp(22px, 3vw, 30px); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 700px) { .readout { grid-template-columns: 1fr 1fr; } .readout > div:nth-child(3) { padding-left: 0; border-left: 0; } .readout > div:nth-child(n+3) { border-top: 1px solid var(--line); } }
+
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; }
+.compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card.fortes { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.card.fortes h3 { color: var(--red); }
+.verdict { font-family: var(--f-display); font-size: 26px; text-transform: uppercase; line-height: 1; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; padding: 5px 9px; border: 1px solid currentColor; width: fit-content; }
+.pill::before { content: ""; width: 7px; height: 7px; background: currentColor; }
+.st-fatal { color: var(--red); } .st-severe { color: var(--amber); } .st-injury { color: #e8d36a; } .st-safe { color: var(--green); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li span { color: var(--muted); }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.section-svg { width: 100%; height: auto; max-width: 100%; }
+
+.timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .timeline { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .timeline { grid-template-columns: 1fr; } }
+.tl { border-top: 2px solid var(--line); padding-top: 10px; min-width: 0; }
+.tl.hot { border-top-color: var(--red); }
+.tl .t { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--cream); font-variant-numeric: tabular-nums; }
+.tl p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); letter-spacing: .02em; display: flex; align-items: baseline; gap: 12px; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.row4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.row4 .chip, .row3 .chip { text-align: center; padding: 8px 4px; }
+.steppers { display: grid; gap: 8px; }
+.stepper { display: grid; grid-template-columns: minmax(0, 1fr) 36px 44px 36px; gap: 6px; align-items: center; }
+.stepper span { font-size: 14px; }
+.stepper span small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.stepper button { font: 600 18px var(--f-mono); color: var(--cream); background: transparent; border: 1px solid var(--line); height: 36px; cursor: pointer; border-radius: 2px; }
+.stepper button:hover { border-color: var(--muted); }
+.stepper button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.stepper output { font-family: var(--f-display); font-size: 20px; text-align: center; font-variant-numeric: tabular-nums; }
+.checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.res { background: var(--panel); border: 1px solid var(--line); padding: 18px; display: grid; gap: 18px; min-width: 0; }
+.hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.hero .big { font-family: var(--f-display); font-size: clamp(44px, 7vw, 76px); line-height: .9; font-variant-numeric: tabular-nums; }
+.hero .big small { font-size: .4em; color: var(--muted); margin-left: 6px; }
+.hero .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); margin-bottom: 6px; }
+.hero .side { text-align: right; color: var(--muted); font-size: 14px; }
+.hero .side b { color: var(--cream); font-family: var(--f-mono); }
+.zbar { display: flex; gap: 2px; height: 34px; }
+.zbar div { height: 100%; min-width: 3px; cursor: default; }
+.zbar div:first-child { border-radius: 4px 0 0 4px; } .zbar div:last-child { border-radius: 0 4px 4px 0; }
+.zlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 18px; font-size: 13px; }
+.zlist div { display: flex; gap: 8px; align-items: baseline; border-top: 1px solid var(--line); padding-top: 6px; }
+.zlist i { width: 10px; height: 10px; flex: none; border-radius: 2px; transform: translateY(1px); }
+.zlist span { color: var(--muted); }
+.zlist b { margin-left: auto; font-family: var(--f-mono); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tip { position: fixed; pointer-events: none; background: #0b1020; border: 1px solid var(--line); padding: 6px 9px; font: 600 12px var(--f-mono); color: var(--cream); z-index: 10; }
+.sysgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.sysgrid > div { padding: 12px 12px 0 0; min-width: 0; }
+.sysgrid > div + div { padding-left: 12px; border-left: 1px solid var(--line); }
+.sysgrid .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--red); }
+.sysgrid .v { font-family: var(--f-display); font-size: 22px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.sysgrid .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 640px) { .sysgrid { grid-template-columns: 1fr 1fr; } .sysgrid > div:nth-child(3) { padding-left: 0; border-left: 0; } .sysgrid > div:nth-child(n+3) { border-top: 1px solid var(--line); margin-top: 10px; } }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th, .tbl td { text-align: left; padding: 8px 12px 8px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--red); font-weight: 600; }
+.tbl td { color: var(--muted); }
+.tbl td:first-child { color: var(--cream); }
+.tbl td.n { font-family: var(--f-mono); color: var(--cream); white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; }
+.budget { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 760px) { .budget { grid-template-columns: minmax(0, 1fr); } }
+.budget .range { font-family: var(--f-display); font-size: clamp(30px, 5vw, 48px); line-height: 1; }
+.budget p { color: var(--muted); margin: 8px 0 0; }
+.note { border-left: 2px solid var(--amber); padding-left: 10px; font-size: 13px; color: var(--muted); margin-top: 14px; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.actions .btn { width: auto; font-size: 15px; padding: 13px 16px; }
+.ghost { font: 600 12px var(--f-mono); letter-spacing: .08em; color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 12px 14px; cursor: pointer; border-radius: 2px; text-transform: uppercase; }
+.ghost:hover { border-color: var(--muted); }
+@media print { body { background: #fff; color: #000; } .controls, .actions, .cta a { display: none; } }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
+</style>
+
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Shelter sizer</div>
+    <a class="site" href="/simulators">← ALL FORTES TOOLS</a>
+  </div>
+  <h1>How big should <em>yours be?</em></h1>
+  <p class="lede">Tell us who is coming, how long you want to be able to stay down and how you want to live. Get the floor area, the air, water, power and food your shelter needs, and an indicative budget to take into a consultation.</p>
+
+  <div class="grid">
+    <div class="controls">
+      <div>
+        <div class="label">Who is coming</div>
+        <div class="steppers" id="people"></div>
+      </div>
+      <div>
+        <div class="label">Stay sealed for</div>
+        <div class="row4" id="stay" role="group" aria-label="Stay length"></div>
+      </div>
+      <div>
+        <div class="label">Finish</div>
+        <div class="row3" id="finish" role="group" aria-label="Finish"></div>
+      </div>
+      <div>
+        <div class="label">Depth</div>
+        <div class="row3" id="depth" role="group" aria-label="Depth"></div>
+      </div>
+      <div>
+        <div class="label">Extras</div>
+        <div class="checks" id="extras" role="group" aria-label="Extras"></div>
+      </div>
+    </div>
+
+    <div class="res">
+      <div class="hero">
+        <div><div class="k">Floor area</div><div class="big" id="area"></div></div>
+        <div class="side" id="heroSide"></div>
+      </div>
+      <div>
+        <div class="zbar" id="zbar" role="img" aria-label="Floor area by zone"></div>
+      </div>
+      <div class="zlist" id="zlist"></div>
+      <div class="sysgrid" id="sys"></div>
+    </div>
+  </div>
+
+  <h2>Your specification</h2>
+  <div class="scroll"><table class="tbl" id="spec"></table></div>
+
+  <h2>Indicative budget</h2>
+  <div class="budget">
+    <div>
+      <div class="range" id="cost"></div>
+      <p id="costText"></p>
+      <div class="note">Placeholder rates for illustration. Replace the figures in the PRICING block of this page with Fortes pricing before publishing. Every build is quoted after a site survey.</div>
+      <div class="actions">
+        <a class="btn" href="https://fortesbunkers.com" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">Book a consultation</a>
+        <button class="ghost" id="copy">Copy my spec</button>
+        <button class="ghost" id="print">Print</button>
+      </div>
+    </div>
+    <div class="scroll"><table class="tbl" id="costTable"></table></div>
+  </div>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="/simulators">Home</a><a href="/simulators/ww3-scenario">WW3</a><a href="/simulators/nuclear-fallout">Nuclear</a><a href="/simulators/blast-impact">Blast</a><a href="/simulators/multi-threat">Threats</a><a href="/simulators/shelter-walkthrough">Walkthrough</a><a href="/simulators/depth-explained">Depth</a><a href="/simulators/air-and-power">Air and power</a><a href="/simulators/shelter-sizer" aria-current="page">Sizer</a><a href="/simulators/supplies-calculator">Supplies</a><a href="/simulators/readiness-quiz">Quiz</a><a href="/simulators/location-checker">Location</a></nav>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Take this spec to a consultation → <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Indicative sizing only. Areas use planning allowances per person for each finish level plus fixed plant, with 15% for corridors and walls. Air is sized at 6, 10 or 15 m³/h per person; water at 15, 30 or 50 litres per person per day with 30 days in tanks and a borehole for the rest; food at 2,100 kcal per adult and 1,600 per child a day; diesel at 0.3 litres per kWh. Budget figures are placeholders, not a Fortes quote.</p>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  // ================= PRICING (placeholder, replace with Fortes figures) =================
+  const PRICING = {
+    perM2ByDepth: { 30: 6500, 50: 8000, 100: 11000 },   // £ per m² for excavation, structure and shell
+    finishPerM2: { essential: 0, comfort: 1500, luxury: 4000 }, // £ per m² added for fit-out
+    shaftPerMetre: 12000,                               // £ per metre of lift and stair shaft
+    systemsBase: 180000,                                // £ air, power, water, blast doors, controls
+    systemsPerPerson: 9000,                             // £ per person for capacity of the above
+    suppliesPerPersonYear: 6000,                        // £ food, medical and consumables per person-year
+    extras: { gym: 60000, cinema: 90000, workshop: 40000, guest: 0, medical: 45000, pool: 0 },
+    spread: 0.25,                                       // ± range shown around the midpoint
+  };
+
+  const S = { adults: 2, children: 2, elderly: 0, pets: 1, stay: 365, finish: "comfort", depth: 50, extras: { medical: true, guest: false, gym: false, workshop: false, cinema: false } };
+  const STAYS = [[14, "2 weeks"], [90, "3 months"], [365, "1 year"], [730, "2 years"]];
+  const FIN = { essential: { name: "Essential", sub: "Bunk rooms" }, comfort: { name: "Comfort", sub: "Family rooms" }, luxury: { name: "Luxury", sub: "Suites" } };
+  const EXTRAS = { medical: ["Medical bay", "Treatment room"], guest: ["Guest room", "+2 places"], gym: ["Gym", "Exercise room"], workshop: ["Workshop", "Repairs, tools"], cinema: ["Cinema", "Lounge + screen"] };
+  const ZC = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"];
+  const f = { essential: 0, comfort: 1, luxury: 2 };
+  const pick = (a) => a[f[S.finish]];
+
+  function compute() {
+    const guests = S.extras.guest ? 2 : 0;
+    const A = S.adults + S.elderly + guests, K = S.children, N = A + K, days = S.stay;
+    const z = [];
+    const sleep = A * pick([6, 9, 14]) + K * pick([4, 6, 9]);
+    const living = Math.max(15, N * pick([3, 4.5, 7]));
+    const baths = Math.ceil(N / pick([6, 4, 2.5])), kitchen = (6 + 0.8 * N) * pick([1, 1.3, 1.7]);
+    const kb = kitchen + baths * pick([4, 4.5, 6]);
+    const med = (S.extras.medical ? (N <= 8 ? 6 : 10) : 0) + pick([6, 8, 12]) + 8 + (N > 12 ? 4 : 0); // medical + command + airlock
+    const air = pick([6, 10, 15]) * N;                          // m³/h
+    const waterDay = pick([15, 30, 50]) * N, tankL = waterDay * Math.min(days, 30);
+    const loadDay = (8 + 1.2 * N) * pick([1, 1.2, 1.5]);        // kWh per day before area-driven load
+    const plantProvisional = 8 + 0.3 * N + 10 + 0.25 * N + tankL / 1000 * 0.5;
+    const kcal = (2100 * A + 1600 * K) * days, foodKg = kcal / 3500;
+    const stores = 4 + N * days * 0.004 + 4;
+    const extras = (S.extras.gym ? 15 : 0) + (S.extras.workshop ? 10 : 0) + (S.extras.cinema ? 20 : 0) + S.pets * 2;
+    // first pass for area-driven power, then size fuel and its tank space
+    let net = sleep + living + kb + med + plantProvisional + stores + extras;
+    const kwhDay = loadDay + 0.05 * net * 1.15;
+    const fuelL = kwhDay * 0.3 * days, fuelM2 = fuelL / 1000 * 0.6;
+    const plant = plantProvisional + fuelM2;
+    net = sleep + living + kb + med + plant + stores + extras;
+    const circ = net * 0.15, total = net + circ;
+    z.push(["Bedrooms", sleep], ["Living and dining", living], ["Kitchen and bathrooms", kb], ["Airlock, command, medical", med], ["Air, power and water plant", plant], ["Stores", stores], ["Extras and pets", extras], ["Corridors and walls", circ]);
+    const battery = Math.ceil(kwhDay * 2 / 10) * 10, filters = Math.ceil(air / 150);
+    // budget
+    const P = PRICING, build = total * (P.perM2ByDepth[S.depth] + P.finishPerM2[S.finish]), shaft = S.depth * P.shaftPerMetre;
+    const systems = P.systemsBase + P.systemsPerPerson * N, supplies = P.suppliesPerPersonYear * N * days / 365;
+    const ex = Object.entries(S.extras).reduce((s, [k, on]) => s + (on ? P.extras[k] || 0 : 0), 0);
+    const mid = build + shaft + systems + supplies + ex;
+    return { N, A, K, days, total, zones: z, air, filters, waterDay, tankL, kwhDay, battery, fuelL, foodKg, kcal, baths,
+      cost: { mid, lo: mid * (1 - P.spread), hi: mid * (1 + P.spread), rows: [["Excavation, structure and fit-out", build], ["Lift and stair shaft", shaft], ["Air, power, water and blast systems", systems], ["Food, medical and consumables", supplies], ["Extras", ex]] } };
+  }
+
+  const fmt = v => Math.round(v).toLocaleString("en-GB");
+  const money = v => v >= 1e6 ? "£" + (v / 1e6).toFixed(1) + "M" : "£" + Math.round(v / 1000) + "k";
+  const dur = d => STAYS.find(s => s[0] === d)[1];
+  let R = null;
+
+  function render() {
+    R = compute();
+    $("area").innerHTML = `${fmt(R.total)}<small>m²</small>`;
+    $("heroSide").innerHTML = `<b>${R.N}</b> people · <b>${dur(R.days)}</b> sealed<br><b>${FIN[S.finish].name}</b> finish · <b>${S.depth} m</b> down`;
+    $("zbar").innerHTML = R.zones.map(([n, a], i) => `<div style="flex:${a} 0 0;background:${ZC[i]}" data-tip="${n}: ${fmt(a)} m² (${Math.round(100 * a / R.total)}%)"></div>`).join("");
+    $("zlist").innerHTML = R.zones.map(([n, a], i) => `<div><i style="background:${ZC[i]}"></i><span>${n}</span><b>${fmt(a)} m²</b></div>`).join("");
+    $("sys").innerHTML = [
+      ["Filtered air", fmt(R.air) + " m³/h", `${R.filters} NBC filter unit${R.filters > 1 ? "s" : ""}`],
+      ["Water", fmt(R.tankL / 1000) + " m³", `in tanks, ${fmt(R.waterDay)} l a day + borehole`],
+      ["Power", fmt(R.kwhDay) + " kWh/day", `${R.battery} kWh battery, ${fmt(R.fuelL)} l diesel`],
+      ["Food", fmt(R.foodKg) + " kg", `${fmt(R.kcal / 1e6)} million kcal of long-life food`],
+    ].map(([k, v, s]) => `<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+    $("spec").innerHTML = `<thead><tr><th>Item</th><th>What it means</th><th style="text-align:right">Sized at</th></tr></thead><tbody>${[
+      ["People", `${R.A} adults${S.elderly ? ` (incl. ${S.elderly} older or less mobile)` : ""}, ${R.K} children${S.pets ? `, ${S.pets} pet${S.pets > 1 ? "s" : ""}` : ""}`, R.N + " places"],
+      ["Bathrooms", "Toilets and showers, shared by bedroom group", R.baths],
+      ["Air", `NBC filtration at ${fmt(R.air / R.N)} m³/h per person, blast valves, CO₂ scrubber for seal-up`, fmt(R.air) + " m³/h"],
+      ["Water tanks", "30 days stored, borehole and treatment for the rest", fmt(R.tankL) + " l"],
+      ["Battery", "Two days of normal load without the generator", R.battery + " kWh"],
+      ["Diesel", `Enough to recharge the battery for ${dur(R.days)}`, fmt(R.fuelL) + " l"],
+      ["Food", `${dur(R.days)} of long-life food at 2,100 kcal per adult a day`, fmt(R.foodKg) + " kg"],
+      ["Direct hit survived to", `Ground burst directly overhead at ${S.depth} m`, "≈ " + { 30: "6 kt", 50: "30 kt", 100: "340 kt" }[S.depth]],
+    ].map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td class="n">${c}</td></tr>`).join("")}</tbody>`;
+    $("cost").textContent = `${money(R.cost.lo)} – ${money(R.cost.hi)}`;
+    $("costText").textContent = `Indicative range for a ${fmt(R.total)} m² ${FIN[S.finish].name.toLowerCase()} shelter at ${S.depth} m for ${R.N} people, stocked for ${dur(R.days)}.`;
+    $("costTable").innerHTML = `<thead><tr><th>Part</th><th style="text-align:right">Midpoint</th></tr></thead><tbody>${R.cost.rows.filter(r => r[1] > 0).map(([a, b]) => `<tr><td>${a}</td><td class="n">${money(b)}</td></tr>`).join("")}<tr><td><b>Total</b></td><td class="n"><b>${money(R.cost.mid)}</b></td></tr></tbody>`;
+  }
+
+  // ================= wiring =================
+  const PEOPLE = [["adults", "Adults", "18 to 65"], ["children", "Children", "Under 18"], ["elderly", "Older adults", "Or less mobile"], ["pets", "Pets", "Dogs, cats"]];
+  PEOPLE.forEach(([k, n, sub]) => {
+    const row = document.createElement("div"); row.className = "stepper";
+    row.innerHTML = `<span>${n}<small>${sub}</small></span><button aria-label="Fewer ${n.toLowerCase()}">−</button><output aria-live="polite">${S[k]}</output><button aria-label="More ${n.toLowerCase()}">+</button>`;
+    const [minus, out, plus] = [row.children[1], row.children[2], row.children[3]];
+    const set = v => { S[k] = Math.max(k === "adults" ? 1 : 0, Math.min(30, v)); out.textContent = S[k]; render(); };
+    minus.onclick = () => set(S[k] - 1); plus.onclick = () => set(S[k] + 1);
+    $("people").appendChild(row);
+  });
+  function chips(el, items, key) {
+    items.forEach(([v, html]) => {
+      const b = document.createElement("button"); b.className = "chip"; b.innerHTML = html; b.setAttribute("aria-pressed", S[key] === v);
+      b.onclick = () => { S[key] = v; el.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b)); render(); };
+      el.appendChild(b);
+    });
+  }
+  chips($("stay"), STAYS.map(([d, n]) => [d, n]), "stay");
+  chips($("finish"), Object.entries(FIN).map(([k, v]) => [k, `${v.name}<small>${v.sub}</small>`]), "finish");
+  chips($("depth"), [30, 50, 100].map(d => [d, d + " m"]), "depth");
+  Object.entries(EXTRAS).forEach(([k, [n, sub]]) => {
+    const b = document.createElement("button"); b.className = "chip"; b.innerHTML = `${n}<small>${sub}</small>`; b.setAttribute("aria-pressed", S.extras[k]);
+    b.onclick = () => { S.extras[k] = !S.extras[k]; b.setAttribute("aria-pressed", S.extras[k]); render(); };
+    $("extras").appendChild(b);
+  });
+  const tip = $("tip");
+  $("zbar").addEventListener("pointermove", ev => { const t = ev.target.dataset.tip; if (!t) { tip.hidden = true; return; } tip.textContent = t; tip.hidden = false; tip.style.left = Math.min(ev.clientX + 12, innerWidth - tip.offsetWidth - 8) + "px"; tip.style.top = ev.clientY + 14 + "px"; });
+  $("zbar").addEventListener("pointerleave", () => tip.hidden = true);
+  $("copy").onclick = async () => {
+    const lines = [`Fortes shelter brief`, `${R.N} people (${R.A} adults, ${R.K} children, ${S.pets} pets), ${dur(R.days)} sealed, ${FIN[S.finish].name} finish, ${S.depth} m deep`,
+      `Floor area: ${fmt(R.total)} m²`, ...R.zones.map(([n, a]) => `  ${n}: ${fmt(a)} m²`),
+      `Air: ${fmt(R.air)} m³/h · Water tanks: ${fmt(R.tankL)} l · Battery: ${R.battery} kWh · Diesel: ${fmt(R.fuelL)} l · Food: ${fmt(R.foodKg)} kg`,
+      `Extras: ${Object.entries(S.extras).filter(e => e[1]).map(e => EXTRAS[e[0]][0]).join(", ") || "none"}`];
+    try { await navigator.clipboard.writeText(lines.join("\n")); $("copy").textContent = "Copied"; } catch { $("copy").textContent = "Copy failed"; }
+    setTimeout(() => $("copy").textContent = "Copy my spec", 1800);
+  };
+  $("print").onclick = () => print();
+  render();
+})();
+</script>
+</body>
+</html>

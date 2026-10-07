@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Blast Simulator</title>
+<meta name="description" content="Pick a threat, set how far you are from ground zero, and compare three places you could be when it lands: in the open, in a brick house, or below ground in a Fortes shelter.">
+<meta property="og:title" content="Fortes Blast Simulator">
+<meta property="og:description" content="Pick a threat, set how far you are from ground zero, and compare three places you could be when it lands: in the open, in a brick house, or below ground in a Fortes shelter.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/simulators/og/blast-impact.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: brand frame with corner brackets; controls left, blast map right; three outcome columns below.
+   Single dark look by choice, matching the Fortes post series. */
+:root {
+  --ink: #0f1526;        /* page ground, Fortes navy */
+  --panel: #161d33;      /* raised surfaces */
+  --line: #2a3350;       /* hairlines */
+  --cream: #f3f0ea;      /* headline text */
+  --muted: #8f97ad;      /* secondary text */
+  --red: #ef4444;        /* Fortes red, the accent */
+  --amber: #f5a524;      /* warning state */
+  --green: #3ecf8e;      /* protected state */
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ink); color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 24px 40px; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: 56px; height: 56px; border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: var(--cream); }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(34px, 6vw, 68px); line-height: .95; margin: 18px 0 10px; text-wrap: balance; letter-spacing: -.01em; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 62ch; margin: 0 0 28px; font-size: 16px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.controls { display: grid; gap: 22px; }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 9px 10px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.row3 .chip { text-align: center; }
+input[type=range] { width: 100%; accent-color: var(--red); }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.btn { font-family: var(--f-display); text-transform: uppercase; font-size: 18px; letter-spacing: .04em; background: var(--red); color: var(--ink); border: 0; padding: 16px 18px; cursor: pointer; border-radius: 2px; width: 100%; }
+.btn:hover { filter: brightness(1.08); }
+
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+canvas#map { width: 100%; aspect-ratio: 16 / 10; max-width: 100%; display: block; background: #0b1020; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px 16px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(1px); }
+.legend span { color: var(--muted); }
+.legend b { font-family: var(--f-mono); font-weight: 600; margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 28px; }
+.readout > div { padding: 14px 16px 14px 0; min-width: 0; }
+.readout > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+.readout .v { font-family: var(--f-display); font-size: clamp(22px, 3vw, 30px); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 700px) { .readout { grid-template-columns: 1fr 1fr; } .readout > div:nth-child(3) { padding-left: 0; border-left: 0; } .readout > div:nth-child(n+3) { border-top: 1px solid var(--line); } }
+
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; }
+.compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card.fortes { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.card.fortes h3 { color: var(--red); }
+.verdict { font-family: var(--f-display); font-size: 26px; text-transform: uppercase; line-height: 1; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; padding: 5px 9px; border: 1px solid currentColor; width: fit-content; }
+.pill::before { content: ""; width: 7px; height: 7px; background: currentColor; }
+.st-fatal { color: var(--red); } .st-severe { color: var(--amber); } .st-injury { color: #e8d36a; } .st-safe { color: var(--green); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li span { color: var(--muted); }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.section-svg { width: 100%; height: auto; max-width: 100%; }
+
+.timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .timeline { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .timeline { grid-template-columns: 1fr; } }
+.tl { border-top: 2px solid var(--line); padding-top: 10px; min-width: 0; }
+.tl.hot { border-top-color: var(--red); }
+.tl .t { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--cream); font-variant-numeric: tabular-nums; }
+.tl p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); letter-spacing: .02em; display: flex; align-items: baseline; gap: 12px; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
+</style>
+
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Blast simulator</div>
+    <a class="site" href="/simulators">← ALL FORTES TOOLS</a>
+  </div>
+  <h1>How far is <em>far enough?</em></h1>
+  <p class="lede">Pick a threat, set how far you are from ground zero, and compare three places you could be when it lands: out in the open, inside a brick house, or below ground in a Fortes shelter.</p>
+
+  <div class="grid">
+    <div class="controls">
+      <div>
+        <div class="label">Threat</div>
+        <div class="chips" id="threats" role="group" aria-label="Threat"></div>
+      </div>
+      <div>
+        <div class="label">Burst type</div>
+        <div class="seg" role="group" aria-label="Burst type">
+          <button class="chip" id="burst-air" data-burst="air" aria-pressed="true">Airburst<small>Widest blast damage</small></button>
+          <button class="chip" id="burst-ground" data-burst="ground" aria-pressed="false">Ground burst<small>Crater + fallout</small></button>
+        </div>
+      </div>
+      <div>
+        <div class="label"><span>Distance from ground zero</span><output id="distOut">3.0 km</output></div>
+        <input type="range" id="dist" min="0" max="1000" value="0" aria-label="Distance from ground zero">
+        <div class="hint">From 50 m to 60 km. You can also click the map.</div>
+      </div>
+      <div>
+        <div class="label">Fortes shelter depth</div>
+        <div class="row3" id="depthChips" role="group" aria-label="Fortes shelter depth"></div>
+        <div class="hint">Fortes shelters are built 30, 50 or 100 metres down.</div>
+      </div>
+      <button class="btn" id="go">Detonate</button>
+    </div>
+
+    <div class="mapwrap">
+      <div class="maphead"><span id="mapTitle"><b>100 kt</b> airburst</span><span id="clock">T+ 0.0 s</span></div>
+      <canvas id="map" aria-label="Map of blast effect rings with your position marked"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+
+  <div class="readout">
+    <div><div class="k">Peak overpressure</div><div class="v" id="r-psi">–</div><div class="s" id="r-psi-s"></div></div>
+    <div><div class="k">Heat flash</div><div class="v" id="r-th">–</div><div class="s" id="r-th-s"></div></div>
+    <div><div class="k">Initial radiation</div><div class="v" id="r-rad">–</div><div class="s" id="r-rad-s"></div></div>
+    <div><div class="k">Blast arrives in</div><div class="v" id="r-t">–</div><div class="s">after the flash</div></div>
+  </div>
+
+  <h2>Where you are when it lands</h2>
+  <div class="compare">
+    <div class="card" id="c-open"></div>
+    <div class="card" id="c-house"></div>
+    <div class="card fortes" id="c-bunker"></div>
+  </div>
+
+  <h2>What happens, in order</h2>
+  <div class="timeline" id="timeline"></div>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="/simulators">Home</a><a href="/simulators/ww3-scenario">WW3</a><a href="/simulators/nuclear-fallout">Nuclear</a><a href="/simulators/blast-impact" aria-current="page">Blast</a><a href="/simulators/multi-threat">Threats</a><a href="/simulators/shelter-walkthrough">Walkthrough</a><a href="/simulators/depth-explained">Depth</a><a href="/simulators/air-and-power">Air and power</a><a href="/simulators/shelter-sizer">Sizer</a><a href="/simulators/supplies-calculator">Supplies</a><a href="/simulators/readiness-quiz">Quiz</a><a href="/simulators/location-checker">Location</a></nav>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Book a confidential consultation → <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Educational model only. Effects use standard cube-root scaling from published weapons-effects data (Glasstone &amp; Dolan) with simplified terrain, weather and shielding. Real outcomes depend on height of burst, terrain, weather, soil and the exact shelter specification. Shelter depths, survivable yields and protection figures are illustrative, not a Fortes guarantee. Direct-hit survival uses Glasstone &amp; Dolan crater scaling and treats twice the crater depth as the damage zone.</p>
+</div>
+
+<script>
+(() => {
+  const THREATS = [
+    { id: "conv", name: "Large bomb", sub: "2,000 lb conventional", kt: 0.0005, nuclear: false },
+    { id: "15", name: "Hiroshima 1945", sub: "15 kt", kt: 15, nuclear: true },
+    { id: "100", name: "Modern warhead", sub: "100 kt", kt: 100, nuclear: true },
+    { id: "475", name: "Strategic warhead", sub: "475 kt", kt: 475, nuclear: true },
+    { id: "1000", name: "Megaton", sub: "1 Mt", kt: 1000, nuclear: true },
+    { id: "5000", name: "Heavy strategic", sub: "5 Mt", kt: 5000, nuclear: true },
+  ];
+  const state = { threat: THREATS[2], burst: "air", dist: 3, depth: 50 };
+  const DEPTHS = [30, 50, 100];
+  // Yield at which twice the crater depth (the damage zone) reaches depth d: Glasstone & Dolan crater scaling, same model as the WW3 simulator.
+  const killKt = d => Math.pow(d / 18, 1 / 0.294);
+  const killLabel = d => { const k = killKt(d); return (k < 10 ? Math.round(k) : Math.round(k / 5) * 5) + " kt"; };
+
+  // ---- physics (simplified, cube-root scaled) ----
+  // Scaled ground range Z = R_km / Y^(1/3) for peak overpressure, airburst at optimum height.
+  // Surface: Glasstone & Dolan surface-burst curves. Airburst: optimum burst height, calibrated to
+  // OTA "The Effects of Nuclear War" (1 Mt: 5 psi at 7.0 km, 1 psi at 18.6 km).
+  const TABLES = {
+    ground: { Z: [0.03, 0.06, 0.1, 0.15, 0.22, 0.32, 0.48, 0.65, 1.21, 2.0, 4.0, 10], P: [5000, 1200, 200, 60, 20, 10, 5, 3, 1, 0.5, 0.2, 0.06] },
+    air:    { Z: [0.03, 0.1, 0.18, 0.28, 0.45, 0.70, 0.95, 1.86, 3.0, 6.0, 15], P: [80, 60, 35, 20, 10, 5, 3, 1, 0.5, 0.2, 0.06] },
+  };
+  const cbrt = Math.cbrt;
+  const burn3 = () => 6 * Math.pow(state.threat.kt, 0.074), burn2 = () => 4 * Math.pow(state.threat.kt, 0.074), burn1 = () => 2.5 * Math.pow(state.threat.kt, 0.074);
+  function psiAt(R) {
+    const { Z: OP_Z, P: OP_P } = TABLES[state.burst];
+    const Z = R / cbrt(state.threat.kt);
+    if (Z <= OP_Z[0]) return OP_P[0];
+    if (Z >= OP_Z[OP_Z.length - 1]) return OP_P[OP_P.length - 1] * Math.pow(OP_Z[OP_Z.length - 1] / Z, 1.2);
+    for (let i = 0; i < OP_Z.length - 1; i++) {
+      if (Z <= OP_Z[i + 1]) {
+        const t = Math.log(Z / OP_Z[i]) / Math.log(OP_Z[i + 1] / OP_Z[i]);
+        return Math.exp(Math.log(OP_P[i]) + t * Math.log(OP_P[i + 1] / OP_P[i]));
+      }
+    }
+  }
+  function radiusForPsi(p) {
+    let lo = 0.0005, hi = 500;
+    for (let i = 0; i < 60; i++) { const m = Math.sqrt(lo * hi); psiAt(m) > p ? lo = m : hi = m; }
+    return lo;
+  }
+  function thermalAt(R) { // cal/cm^2
+    if (!state.threat.nuclear) return 0;
+    const f = state.burst === "air" ? 0.35 : 0.18;
+    const Rcm = Math.max(R, 0.01) * 1e5;
+    return f * state.threat.kt * 1e12 / (4 * Math.PI * Rcm * Rcm) * Math.exp(-R / 25);
+  }
+  function radAt(R) { // rem, free in air
+    if (!state.threat.nuclear) return 0;
+    const lam = 0.35 * Math.pow(state.threat.kt / 15, 0.1);
+    const r = Math.max(R, 0.05);
+    return 1480 * state.threat.kt * Math.exp(-r / lam) / (r * r);
+  }
+  function solve(fn, target) {
+    let lo = 0.001, hi = 500;
+    if (fn(lo) < target) return 0;
+    for (let i = 0; i < 60; i++) { const m = Math.sqrt(lo * hi); fn(m) > target ? lo = m : hi = m; }
+    return lo;
+  }
+  const fireballR = () => state.threat.nuclear ? 0.22 * Math.pow(state.threat.kt / 20, 0.373) * (state.burst === "ground" ? 1.26 : 1) : 0;
+  const craterR = () => state.burst === "ground" ? 0.02 * Math.pow(state.threat.kt, 0.3) * (state.threat.nuclear ? 1 : 0.6) : 0;
+  function arrival(R) {
+    const Z = R / cbrt(state.threat.kt);
+    return Math.max(0, R / 0.343 * (1 - 0.45 * Math.exp(-Z * 3)));
+  }
+
+  function rings() {
+    const list = [];
+    if (state.burst === "ground" && craterR() > 0) list.push({ name: "Crater", r: craterR(), c: "#ffffff" });
+    if (fireballR()) list.push({ name: "Fireball", r: fireballR(), c: "#ffd166" });
+    list.push({ name: "20 psi · concrete buildings destroyed", r: radiusForPsi(20), c: "#ef4444" });
+    if (state.threat.nuclear) list.push({ name: "500 rem · lethal radiation dose", r: solve(radAt, 500), c: "#3ecf8e" });
+    list.push({ name: "5 psi · most houses collapse", r: radiusForPsi(5), c: "#f97316" });
+    if (state.threat.nuclear) list.push({ name: "3rd-degree burns", r: solve(thermalAt, burn3()), c: "#f5a524" });
+    list.push({ name: "1 psi · windows shatter", r: radiusForPsi(1), c: "#8f97ad" });
+    return list.filter(x => x.r > 0).sort((a, b) => b.r - a.r);
+  }
+
+  // ---- formatting ----
+  const fmtKm = r => r < 1 ? Math.round(r * 1000) + " m" : (r < 10 ? r.toFixed(1) : Math.round(r)) + " km";
+  const fmtNum = v => v >= 1000 ? Math.round(v).toLocaleString("en-GB") : v >= 10 ? Math.round(v).toString() : v >= 1 ? v.toFixed(1) : v >= 0.01 ? v.toFixed(2) : "<0.01";
+  const fmtS = s => s < 60 ? s.toFixed(1) + " s" : Math.floor(s / 60) + " min " + Math.round(s % 60) + " s";
+
+  // ---- outcomes ----
+  const LV = { fatal: ["Likely fatal", "st-fatal"], severe: ["Severe injury", "st-severe"], injury: ["Injury likely", "st-injury"], safe: ["Protected", "st-safe"] };
+  function evaluate() {
+    const R = state.dist, psi = psiAt(R), th = thermalAt(R), rad = radAt(R);
+    const inCrater = state.burst === "ground" && R < craterR() * 1.5;
+    const inFire = R < fireballR();
+
+    let open = "safe";
+    if (inFire || psi >= 10 || th >= burn3() || rad >= 600) open = "fatal";
+    else if (psi >= 3 || th >= burn2() || rad >= 200) open = "severe";
+    else if (psi >= 1 || th >= burn1() || rad >= 50) open = "injury";
+
+    const radHouse = rad / 3, thHouse = th >= 12 ? "House likely burns" : th >= 6 ? "Fires may start" : "Shielded";
+    let house = "safe";
+    if (inFire || psi >= 8 || radHouse >= 600) house = "fatal";
+    else if (psi >= 4 || radHouse >= 200 || th >= 12) house = "severe";
+    else if (psi >= 1 || radHouse >= 50) house = "injury";
+
+    const pf = 2 * Math.pow(2, state.depth / 0.12);
+    const radB = rad / pf;
+    const surviveKt = killKt(state.depth);
+    const directHit = state.burst === "ground" && inCrater && state.threat.kt > surviveKt;
+    let bunker = "safe", bnote = `${state.depth} m of earth carries the blast, heat and radiation. Air is filtered, power and water are on board.`;
+    if (directHit) { bunker = "fatal"; bnote = `A ${state.threat.sub} ground burst directly overhead digs deeper than ${state.depth} m. At this depth a Fortes shelter survives a direct hit up to about ${killLabel(state.depth)}.`; }
+    return { R, psi, th, rad, open, house, bunker, radHouse, thHouse, radB, pf, bnote, inCrater, inFire, directHit };
+  }
+
+  function openNote(e) {
+    if (e.inFire) return "Inside the fireball.";
+    if (e.psi >= 10) return "Blast wind and debris at hurricane force and beyond.";
+    if (e.th >= burn3()) return "Exposed skin gets third-degree burns from the flash.";
+    if (e.psi >= 3) return "Flying glass, debris and being thrown by the blast wind.";
+    if (e.psi >= 1) return "Flying glass and burns are the main risks.";
+    if (state.threat.nuclear && state.burst === "ground") return "Little direct damage, but fallout can arrive within the hour downwind.";
+    return "Little direct damage at this range.";
+  }
+  function houseNote(e) {
+    if (e.psi >= 8) return "A typical brick house collapses.";
+    if (e.psi >= 4) return "Walls and roof fail. Occupants hurt by collapse and debris.";
+    if (e.psi >= 1) return "Windows blow in. Flying glass is the main danger indoors.";
+    if (state.threat.nuclear && state.burst === "ground") return "Standing, but an ordinary house cuts fallout radiation only 2 to 10 times.";
+    return "Light damage at this range.";
+  }
+
+  function card(el, title, lvl, verdict, rows, note, extra = "") {
+    const [label, cls] = LV[lvl];
+    el.innerHTML = `<h3>${title}</h3><div class="pill ${cls}">${label}</div><div class="verdict">${verdict}</div>${extra}<ul>${rows.map(([k, v]) => `<li><span>${k}</span><b>${v}</b></li>`).join("")}</ul><p>${note}</p>`;
+  }
+
+  function sectionSvg() {
+    const d = state.depth, maxD = 110, y = 34 + (d / maxD) * 74;
+    return `<svg class="section-svg" viewBox="0 0 300 130" role="img" aria-label="Cross-section: shelter ${d} metres below ground">
+      <rect x="0" y="0" width="300" height="30" fill="#0b1020"/>
+      <rect x="0" y="30" width="300" height="100" fill="#221c18"/>
+      <line x1="0" y1="30" x2="300" y2="30" stroke="#8f97ad" stroke-width="1.5"/>
+      <rect x="40" y="16" width="30" height="14" fill="#2a3350"/><path d="M38 16 L55 6 L72 16Z" fill="#2a3350"/>
+      <line x1="150" y1="30" x2="150" y2="${y}" stroke="#ef4444" stroke-dasharray="3 3"/>
+      <text x="158" y="${(30 + y) / 2 + 4}" fill="#f3f0ea" font-family="JetBrains Mono, monospace" font-size="11">${d} m earth</text>
+      <rect x="110" y="${y}" width="80" height="20" rx="10" fill="#161d33" stroke="#ef4444" stroke-width="2"/>
+      <text x="150" y="${y + 14}" fill="#ef4444" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600">FORTES</text>
+    </svg>`;
+  }
+
+  // ---- render ----
+  const $ = id => document.getElementById(id);
+  function render() {
+    const e = evaluate(), t = state.threat;
+    $("distOut").textContent = fmtKm(state.dist);
+    $("mapTitle").innerHTML = `<b>${t.nuclear ? t.sub : t.sub}</b> ${state.burst === "air" ? "airburst" : "ground burst"} · you are <b>${fmtKm(e.R)}</b> out`;
+
+    $("r-psi").textContent = fmtNum(e.psi) + " psi";
+    $("r-psi-s").textContent = e.psi >= 20 ? "Reinforced concrete destroyed" : e.psi >= 5 ? "Most houses collapse" : e.psi >= 1 ? "Windows shatter" : "Minor damage";
+    $("r-th").textContent = t.nuclear ? fmtNum(e.th) + " cal/cm²" : "None";
+    $("r-th-s").textContent = !t.nuclear ? "Conventional explosive" : e.th >= burn3() ? "Third-degree burns" : e.th >= burn2() ? "Second-degree burns" : e.th >= burn1() ? "First-degree burns" : "Below burn threshold";
+    $("r-rad").textContent = t.nuclear ? fmtNum(e.rad) + " rem" : "None";
+    $("r-rad-s").textContent = !t.nuclear ? "Conventional explosive" : e.rad >= 600 ? "Lethal dose" : e.rad >= 200 ? "Radiation sickness" : e.rad >= 50 ? "Measurable harm" : "Low";
+    $("r-t").textContent = fmtS(arrival(e.R));
+
+    const radRow = v => t.nuclear ? fmtNum(v) + " rem" : "None";
+    card($("c-open"), "Out in the open", e.open, LV[e.open][0] === "Protected" ? "Low direct risk" : "Fully exposed",
+      [["Overpressure", fmtNum(e.psi) + " psi"], ["Heat flash", t.nuclear ? fmtNum(e.th) + " cal/cm²" : "None"], ["Radiation", radRow(e.rad)]], openNote(e));
+    card($("c-house"), "Inside a brick house", e.house, e.house === "safe" ? "Mostly intact" : e.psi >= 8 ? "Collapsed" : "Damaged",
+      [["Overpressure", fmtNum(e.psi) + " psi"], ["Heat flash", t.nuclear ? e.thHouse : "None"], ["Radiation", radRow(e.radHouse)]], houseNote(e));
+    card($("c-bunker"), `Fortes shelter at ${state.depth} m`, e.bunker,
+      e.directHit ? "Direct hit" : "Protected",
+      [["Direct hit survived to", "≈ " + killLabel(state.depth)], ["Heat flash", "0"], ["Radiation", t.nuclear ? (e.directHit ? "–" : fmtNum(e.radB) + " rem") : "None"]],
+      e.bnote, sectionSvg());
+
+    const tl = [
+      ["T+ 0 s", t.nuclear ? "Flash and heat. Light and thermal pulse reach you instantly." : "Detonation. Fragments travel faster than sound.", true],
+      ["T+ " + fmtS(arrival(e.R)), `Blast wave arrives at ${fmtNum(e.psi)} psi, followed by a reverse wind.`, true],
+      ["T+ 1 min", t.nuclear ? "Initial radiation pulse is over. The fireball has risen." : "Secondary fires and structural collapse.", false],
+      [state.threat.nuclear && state.burst === "ground" ? "T+ " + Math.max(10, Math.round(e.R / 25 * 60)) + " min" : "Hours to days",
+        state.threat.nuclear && state.burst === "ground" ? "Fallout begins downwind (at 25 km/h wind). Stay sealed below ground for at least 2 weeks." : "Power, water and supply lines may be down. A sustained shelter keeps running for 12+ months.", false],
+    ];
+    $("timeline").innerHTML = tl.map(([k, v, hot]) => `<div class="tl${hot ? " hot" : ""}"><div class="t">${k}</div><p>${v}</p></div>`).join("");
+
+    $("legend").innerHTML = rings().map(r => `<div><i style="background:${r.c}"></i><span>${r.name}</span><b>${fmtKm(r.r)}</b></div>`).join("");
+    draw();
+  }
+
+  // ---- map canvas ----
+  const cv = $("map"), ctx = cv.getContext("2d");
+  let anim = null;
+  function view() {
+    const rs = rings();
+    const maxR = Math.max(rs.length ? rs[0].r : 0.1, state.dist) * 1.12;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    const cx = w * 0.42, cy = h / 2;
+    const scale = Math.min(cx, h / 2, w - cx) / maxR;
+    return { rs, maxR, w, h, cx, cy, scale };
+  }
+  function draw(shockR = null, flash = 0) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const v = view();
+    ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, w, h);
+
+    // grid
+    ctx.strokeStyle = "rgba(143,151,173,0.08)"; ctx.lineWidth = 1;
+    for (let x = v.cx % 40; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    for (let y = v.cy % 40; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+    // rings (largest first)
+    v.rs.forEach(r => {
+      const rr = r.r * v.scale;
+      ctx.beginPath(); ctx.arc(v.cx, v.cy, Math.max(rr, 1.5), 0, Math.PI * 2);
+      ctx.fillStyle = r.c + "1f"; ctx.fill();
+      ctx.strokeStyle = r.c; ctx.lineWidth = 1.5; ctx.stroke();
+    });
+
+    // scale bar
+    const nice = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
+    const target = v.maxR / 3;
+    const sb = nice.reduce((a, b) => Math.abs(b - target) < Math.abs(a - target) ? b : a);
+    ctx.strokeStyle = "#f3f0ea"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(14, h - 16); ctx.lineTo(14 + sb * v.scale, h - 16); ctx.stroke();
+    ctx.fillStyle = "#f3f0ea"; ctx.font = "600 11px 'JetBrains Mono', monospace";
+    ctx.fillText(fmtKm(sb), 14, h - 22);
+
+    // ground zero
+    ctx.fillStyle = "#ef4444"; ctx.beginPath(); ctx.arc(v.cx, v.cy, 3, 0, Math.PI * 2); ctx.fill();
+
+    // shockwave
+    if (shockR !== null) {
+      const sr = shockR * v.scale;
+      ctx.beginPath(); ctx.arc(v.cx, v.cy, sr, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(243,240,234,0.9)"; ctx.lineWidth = 3; ctx.stroke();
+      ctx.beginPath(); ctx.arc(v.cx, v.cy, Math.max(sr - 8, 0), 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(243,240,234,0.25)"; ctx.lineWidth = 8; ctx.stroke();
+    }
+
+    // you marker
+    const mx = v.cx + state.dist * v.scale, my = v.cy;
+    ctx.strokeStyle = "#f3f0ea"; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(v.cx, v.cy); ctx.lineTo(mx, my); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = "#f3f0ea"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(mx, my, 7, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx - 12, my); ctx.lineTo(mx - 4, my); ctx.moveTo(mx + 4, my); ctx.lineTo(mx + 12, my);
+    ctx.moveTo(mx, my - 12); ctx.lineTo(mx, my - 4); ctx.moveTo(mx, my + 4); ctx.lineTo(mx, my + 12); ctx.stroke();
+    ctx.fillStyle = "#f3f0ea"; ctx.font = "600 11px 'JetBrains Mono', monospace";
+    const lbl = "YOU · " + fmtKm(state.dist);
+    const lw = ctx.measureText(lbl).width;
+    ctx.fillText(lbl, Math.min(mx - lw / 2, w - lw - 6), my - 18);
+
+    if (flash > 0) { ctx.fillStyle = `rgba(255,250,235,${flash})`; ctx.fillRect(0, 0, w, h); }
+  }
+
+  function detonate() {
+    if (anim) cancelAnimationFrame(anim);
+    const v = view();
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const endR = v.maxR;
+    const tEnd = arrival(endR);
+    if (reduce) { $("clock").textContent = "T+ " + fmtS(arrival(state.dist)) + " (blast reaches you)"; draw(); return; }
+    const dur = 3200, t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur);
+      const simT = tEnd * k;
+      // invert arrival() by bisection to get shock radius at simT
+      let lo = 0, hi = endR;
+      for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; arrival(m) < simT ? lo = m : hi = m; }
+      const flash = state.threat.nuclear ? Math.max(0, 0.9 - k * 6) : Math.max(0, 0.4 - k * 6);
+      const reached = simT >= arrival(state.dist);
+      $("clock").textContent = "T+ " + fmtS(simT) + (reached ? " · blast has reached you" : "");
+      draw(lo, flash);
+      if (k < 1) anim = requestAnimationFrame(step); else { anim = null; draw(); }
+    };
+    anim = requestAnimationFrame(step);
+  }
+
+  // ---- controls ----
+  const threatsEl = $("threats");
+  THREATS.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.id = "threat-" + t.id;
+    b.innerHTML = `${t.name}<small>${t.sub}</small>`;
+    b.setAttribute("aria-pressed", t === state.threat);
+    b.onclick = () => { state.threat = t; threatsEl.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b)); render(); };
+    threatsEl.appendChild(b);
+  });
+  document.querySelectorAll("[data-burst]").forEach(b => b.onclick = () => {
+    state.burst = b.dataset.burst;
+    document.querySelectorAll("[data-burst]").forEach(c => c.setAttribute("aria-pressed", c === b));
+    render();
+  });
+  const DMIN = 0.05, DMAX = 60;
+  const toSlider = d => Math.round(1000 * Math.log(d / DMIN) / Math.log(DMAX / DMIN));
+  const fromSlider = s => DMIN * Math.pow(DMAX / DMIN, s / 1000);
+  $("dist").value = toSlider(state.dist);
+  $("dist").oninput = e => { state.dist = fromSlider(+e.target.value); render(); };
+  const depthEl = $("depthChips");
+  DEPTHS.forEach(d => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.id = "depth-" + d; b.dataset.d = d; b.textContent = d + " m";
+    b.setAttribute("aria-pressed", d === state.depth);
+    b.onclick = () => { state.depth = d; depthEl.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b)); render(); };
+    depthEl.appendChild(b);
+  });
+  $("go").onclick = detonate;
+  cv.addEventListener("click", ev => {
+    const rect = cv.getBoundingClientRect(), v = view();
+    const dx = ev.clientX - rect.left - v.cx, dy = ev.clientY - rect.top - v.cy;
+    const d = Math.min(DMAX, Math.max(DMIN, Math.hypot(dx, dy) / v.scale));
+    state.dist = d; $("dist").value = toSlider(d); render();
+  });
+  new ResizeObserver(() => draw()).observe(cv);
+  if (document.fonts) document.fonts.ready.then(() => draw());
+  render();
+})();
+</script>
+</body>
+</html>

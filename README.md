@@ -29,7 +29,22 @@ Open any `index.html` in a browser, or serve the folder with any static host.
 - **Pricing.** `shelter-sizer` uses placeholder rates. Replace the numbers in the `PRICING` block near the top of its script with Fortes pricing.
 - **Share images.** Each page sets `og:image` to `og.png`. Social sites need an absolute URL, so change it to the full address once the site's domain is known (for example `https://example.com/nuclear-simulator/og.png`).
 
-## Lovable
+## Adding to the Fortes website (Lovable)
+
+The `lovable/` folder holds every tool laid out exactly as the **fortes-bunker-** Lovable project expects, so the files can be copied over path for path:
+
+| Copy from this repo | To the Lovable project | Served at |
+| --- | --- | --- |
+| `lovable/public/simulators/*.html` | `public/simulators/` | `/simulators/<slug>` (inside the site's iframe) |
+| `lovable/public/simulators/og/*.png` | `public/simulators/og/` | Share images |
+| `lovable/src/content/tools/shelter-walkthrough.html` | `src/content/tools/` | `/simulators/shelter-walkthrough`, behind the access gate |
+| `lovable/src/data/interactiveTools.ts` | `src/data/` | Adds the sizer, supplies, quiz and depth tools to the tool cards |
+
+Slugs on the site: `blast-impact`, `nuclear-fallout`, `ww3-scenario`, `location-checker`, `air-and-power`, `multi-threat`, `shelter-walkthrough`, `shelter-sizer`, `supplies-calculator`, `readiness-quiz`, `depth-explained`. Links between tools open the matching `/simulators/<slug>` page in the full window.
+
+After changing any page in this repo, run `python3 tools/build_lovable.py` to rebuild `lovable/`.
+
+## Standalone Lovable projects
 
 `lovable-routes/` has one TanStack route per page. To use them in the Lovable project:
 
