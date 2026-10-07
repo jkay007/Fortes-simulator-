@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Nuclear Simulator</title>
+<meta name="description" content="Set the weapon, the wind and where you are. See the blast rings, the fallout plume and the radiation dose in the open, in a house, or sealed in a Fortes shelter.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: Fortes bracket frame; controls left, top-down effects + fallout map right; cloud section,
+   comparison cards and the 7-10 decay ladder below. Single dark look, matching the post series. */
+:root {
+  --ink: #0f1526; --panel: #161d33; --line: #2a3350; --cream: #f3f0ea; --muted: #8f97ad;
+  --red: #ef4444; --amber: #f5a524; --green: #3ecf8e; --fall: #b48cff;
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ink); color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 24px 40px; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: 56px; height: 56px; border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(34px, 6vw, 68px); line-height: .95; margin: 18px 0 10px; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 64ch; margin: 0 0 28px; font-size: 16px; }
+.grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.controls { display: grid; gap: 20px; }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 9px 10px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.row3 .chip { text-align: center; }
+input[type=range] { width: 100%; accent-color: var(--red); }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.btn { font-family: var(--f-display); text-transform: uppercase; font-size: 18px; letter-spacing: .04em; background: var(--red); color: var(--ink); border: 0; padding: 16px 18px; cursor: pointer; border-radius: 2px; width: 100%; }
+.btn:hover { filter: brightness(1.08); }
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+canvas#map { width: 100%; aspect-ratio: 16 / 10; max-width: 100%; display: block; background: #0b1020; cursor: crosshair; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 16px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(1px); }
+.legend span { color: var(--muted); }
+.legend b { font-family: var(--f-mono); font-weight: 600; margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 28px; }
+.readout > div { padding: 14px 14px 14px 0; min-width: 0; }
+.readout > div + div { padding-left: 14px; border-left: 1px solid var(--line); }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--red); }
+.readout .v { font-family: var(--f-display); font-size: clamp(20px, 2.6vw, 28px); font-variant-numeric: tabular-nums; margin-top: 4px; overflow-wrap: anywhere; }
+.readout .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 900px) { .readout { grid-template-columns: 1fr 1fr; } .readout > div { border-left: 0 !important; padding-left: 0 !important; border-top: 1px solid var(--line); } .readout > div:nth-child(even) { padding-left: 14px !important; border-left: 1px solid var(--line) !important; } .readout > div:nth-child(-n+2) { border-top: 0; } }
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; }
+.compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card.fortes { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.card.fortes h3 { color: var(--red); }
+.verdict { font-family: var(--f-display); font-size: 26px; text-transform: uppercase; line-height: 1; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; padding: 5px 9px; border: 1px solid currentColor; width: fit-content; }
+.pill::before { content: ""; width: 7px; height: 7px; background: currentColor; }
+.st-fatal { color: var(--red); } .st-severe { color: var(--amber); } .st-injury { color: #e8d36a; } .st-safe { color: var(--green); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li span { color: var(--muted); }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.cloud svg { width: 100%; height: auto; display: block; background: #0b1020; border: 1px solid var(--line); }
+.ladder { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ladder th { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--red); text-align: left; font-weight: 600; padding: 0 8px 8px 0; }
+.ladder td { border-top: 1px solid var(--line); padding: 9px 8px 9px 0; font-variant-numeric: tabular-nums; }
+.ladder td:not(:first-child), .ladder th:not(:first-child) { text-align: right; font-family: var(--f-mono); }
+.ladder td:first-child { color: var(--muted); }
+.tablewrap { overflow-x: auto; }
+.note { font-size: 13px; color: var(--muted); margin-top: 12px; max-width: 90ch; }
+.note a { color: var(--cream); }
+.check td:nth-child(2) { text-align: left; font-family: var(--f-body); color: var(--cream); }
+.check th:nth-child(2) { text-align: left; }
+.check td:first-child { min-width: 180px; }
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); display: flex; align-items: baseline; gap: 12px; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+</style>
+
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Nuclear simulator</div>
+    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+  </div>
+  <h1>The blast is minutes. <em>Fallout is weeks.</em></h1>
+  <p class="lede">Set the weapon, the wind and where you are. See the blast rings, the fallout plume drifting downwind, and the radiation dose you would take over the next two weeks in the open, in a house, or sealed in a Fortes shelter.</p>
+
+  <div class="grid">
+    <div class="controls">
+      <div>
+        <div class="label">Weapon</div>
+        <div class="chips" id="presets" role="group" aria-label="Weapon presets"></div>
+      </div>
+      <div>
+        <div class="label"><span>Yield</span><output id="yieldOut"></output></div>
+        <input type="range" id="yield" min="0" max="1000" aria-label="Yield">
+      </div>
+      <div>
+        <div class="label">Burst type</div>
+        <div class="seg" role="group" aria-label="Burst type">
+          <button class="chip" id="burst-air" data-burst="air" aria-pressed="false">Airburst<small>Max blast, little fallout</small></button>
+          <button class="chip" id="burst-ground" data-burst="ground" aria-pressed="true">Ground burst<small>Crater + heavy fallout</small></button>
+        </div>
+      </div>
+      <div>
+        <div class="label"><span>Wind speed (blowing east)</span><output id="windOut"></output></div>
+        <input type="range" id="wind" min="5" max="60" step="1" value="24" aria-label="Wind speed in km/h">
+      </div>
+      <div>
+        <div class="label"><span>Your position</span><output id="posOut"></output></div>
+        <input type="range" id="dist" min="0" max="1000" aria-label="Distance from ground zero">
+        <div class="hint">Drag to move along the downwind line, or click anywhere on the map.</div>
+      </div>
+      <div>
+        <div class="label">Fortes shelter depth</div>
+        <div class="row3" id="depthChips" role="group" aria-label="Fortes shelter depth"></div>
+        <div class="hint">Fortes shelters are built 30, 50 or 100 metres down.</div>
+      </div>
+      <button class="btn" id="go">Detonate</button>
+    </div>
+
+    <div class="mapwrap">
+      <div class="maphead"><span id="mapTitle"></span><span id="clock">T+ 0.0 s</span></div>
+      <canvas id="map" tabindex="0" aria-label="Map of blast rings and fallout plume, with your position marked"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+
+  <div class="readout">
+    <div><div class="k">Blast</div><div class="v" id="r-psi"></div><div class="s" id="r-psi-s"></div></div>
+    <div><div class="k">Heat flash</div><div class="v" id="r-th"></div><div class="s" id="r-th-s"></div></div>
+    <div><div class="k">Initial radiation</div><div class="v" id="r-rad"></div><div class="s" id="r-rad-s"></div></div>
+    <div><div class="k">Fallout at H+1</div><div class="v" id="r-fo"></div><div class="s" id="r-fo-s"></div></div>
+    <div><div class="k">Fallout arrives</div><div class="v" id="r-fa"></div><div class="s" id="r-fa-s"></div></div>
+  </div>
+
+  <h2>Two weeks, three places</h2>
+  <div class="compare">
+    <div class="card" id="c-open"></div>
+    <div class="card" id="c-house"></div>
+    <div class="card fortes" id="c-bunker"></div>
+  </div>
+
+  <div class="two">
+    <div class="cloud">
+      <h2>The cloud</h2>
+      <div id="cloudSvg"></div>
+      <p class="note" id="cloudNote"></p>
+    </div>
+    <div>
+      <h2>The 7–10 rule</h2>
+      <div class="tablewrap">
+        <table class="ladder" id="ladder"></table>
+      </div>
+      <p class="note">For every sevenfold increase in time after the blast, fallout radiation drops tenfold. The first 48 hours are the most dangerous, which is why you need to be sealed in before the fallout arrives, not after.</p>
+    </div>
+  </div>
+
+  <h2>Checked against real events</h2>
+  <div class="tablewrap"><table class="ladder check" id="check"></table></div>
+  <p class="note">Every figure in the "This model" column is calculated live by the same code that drives the simulator above. Sources: <a href="https://atomicarchive.com/resources/documents/effects/ota/chapter-2-2-2.html" target="_blank" rel="noopener">OTA, The Effects of Nuclear War (1979)</a>; <a href="https://www.abomb1.org/nukeffct/airburst.html" target="_blank" rel="noopener">Glasstone &amp; Dolan, The Effects of Nuclear Weapons</a>; US Strategic Bombing Survey (1946); Castle Bravo fallout survey as reported by Glasstone (1957).</p>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Book a confidential consultation → <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Educational model only. Blast, heat and initial radiation use cube-root scaling from published weapons-effects data (Glasstone &amp; Dolan). Fallout uses a simplified elliptical plume and the t<sup>-1.2</sup> decay law, with a steady wind and flat terrain. Real outcomes depend on height of burst, weather, terrain, soil and the exact shelter specification. Shelter depths, survivable yields and protection figures are illustrative, not a Fortes guarantee. Direct-hit survival uses Glasstone &amp; Dolan crater scaling and treats twice the crater depth as the damage zone.</p>
+</div>
+
+<script>
+(() => {
+  // ================= physics =================
+  // Peak overpressure vs scaled ground range Z = R_km / Y_kt^(1/3).
+  // Surface burst: Glasstone & Dolan surface-burst curves. Airburst: optimum height of burst,
+  // calibrated to OTA "The Effects of Nuclear War" (1 Mt: 5 psi at 7.0 km, 1 psi at 18.6 km);
+  // ground pressure under an airburst is capped by the burst height.
+  const TABLES = {
+    ground: { Z: [0.03, 0.06, 0.1, 0.15, 0.22, 0.32, 0.48, 0.65, 1.21, 2.0, 4.0, 10], P: [5000, 1200, 200, 60, 20, 10, 5, 3, 1, 0.5, 0.2, 0.06] },
+    air:    { Z: [0.03, 0.1, 0.18, 0.28, 0.45, 0.70, 0.95, 1.86, 3.0, 6.0, 15], P: [80, 60, 35, 20, 10, 5, 3, 1, 0.5, 0.2, 0.06] },
+  };
+  const S = { kt: 300, burst: "ground", wind: 24, x: 20, y: 0, depth: 50 };
+  const DEPTHS = [30, 50, 100];
+  // Yield at which twice the crater depth (the damage zone) reaches depth d: Glasstone & Dolan crater scaling, same model as the WW3 simulator.
+  const killKt = d => Math.pow(d / 18, 1 / 0.294);
+  const killLabel = d => { const k = killKt(d); return (k < 10 ? Math.round(k) : Math.round(k / 5) * 5) + " kt"; };
+  function psiAt(R) {
+    const { Z: OP_Z, P: OP_P } = TABLES[S.burst];
+    const Z = R / Math.cbrt(S.kt), n = OP_Z.length;
+    if (Z <= OP_Z[0]) return OP_P[0];
+    if (Z >= OP_Z[n - 1]) return OP_P[n - 1] * Math.pow(OP_Z[n - 1] / Z, 1.2);
+    for (let i = 0; i < n - 1; i++) if (Z <= OP_Z[i + 1]) {
+      const t = Math.log(Z / OP_Z[i]) / Math.log(OP_Z[i + 1] / OP_Z[i]);
+      return Math.exp(Math.log(OP_P[i]) + t * Math.log(OP_P[i + 1] / OP_P[i]));
+    }
+  }
+  const thermalAt = R => { const f = S.burst === "air" ? 0.35 : 0.18, c = Math.max(R, 0.01) * 1e5; return f * S.kt * 1e12 / (4 * Math.PI * c * c) * Math.exp(-R / 25); };
+  const radAt = R => { const lam = 0.35 * Math.pow(S.kt / 15, 0.1), r = Math.max(R, 0.05); return 1480 * S.kt * Math.exp(-r / lam) / (r * r); };
+  function solve(fn, target) { let lo = 0.0005, hi = 2000; if (fn(lo) < target) return 0; for (let i = 0; i < 60; i++) { const m = Math.sqrt(lo * hi); fn(m) > target ? lo = m : hi = m; } return lo; }
+  // Fireball: Glasstone (20 kt: 1,460 ft across; 1 Mt: 6,300 ft across).
+  const fireballR = () => 0.22 * Math.pow(S.kt / 20, 0.373) * (S.burst === "ground" ? 1.26 : 1);
+  // Burn thresholds rise with yield because the heat pulse lasts longer (Glasstone table 12.65).
+  const burn3 = () => 6 * Math.pow(S.kt, 0.074), burn2 = () => 4 * Math.pow(S.kt, 0.074), burn1 = () => 2.5 * Math.pow(S.kt, 0.074);
+  const craterR = () => S.burst === "ground" ? 0.02 * Math.pow(S.kt, 0.3) : 0;
+  const arrival = R => Math.max(0, R / 0.343 * (1 - 0.45 * Math.exp(-R / Math.cbrt(S.kt) * 3)));
+  const cloudTop = () => Math.min(5.2 * Math.pow(S.kt, 0.21), 64);
+  const cloudRadius = () => cloudTop() * 0.45 * Math.pow(S.kt / 1000, 0.08);
+
+  // Fallout: elliptical H+1 dose-rate contours (rem/h) blown east. Ground bursts only.
+  // Constant calibrated to Castle Bravo (15 Mt, 1954): 36-hour doses of about 2,300 R at 160 km
+  // and 1,000 R at 200 km downwind on Rongelap Atoll.
+  function plume(D) {
+    const L = 24 * Math.pow(S.kt, 0.45) * Math.pow(D, -0.33) * Math.sqrt(S.wind / 24);
+    const halfW = 0.07 * L + 0.15 * Math.cbrt(S.kt);
+    return { cx: L / 2 - 0.05 * L, a: L / 2 * 1.05, b: halfW };
+  }
+  function inside(D, x, y) { const p = plume(D); return ((x - p.cx) / p.a) ** 2 + (y / p.b) ** 2 <= 1; }
+  function falloutH1(x, y) {
+    if (S.burst !== "ground") return 0;
+    if (!inside(0.01, x, y)) return 0;
+    let lo = 0.01, hi = 1e5;
+    if (inside(hi, x, y)) return hi;
+    for (let i = 0; i < 60; i++) { const m = Math.sqrt(lo * hi); inside(m, x, y) ? lo = m : hi = m; }
+    return lo;
+  }
+  const arriveH = (x, y) => Math.max(0.25, Math.hypot(x, y) / S.wind);       // hours
+  const doseBetween = (R1, ta, te) => 5 * R1 * (Math.pow(ta, -0.2) - Math.pow(te, -0.2)); // rem, R(t)=R1 t^-1.2
+
+  // ================= formatting =================
+  const fmtKm = r => r < 1 ? Math.round(r * 1000) + " m" : (r < 10 ? r.toFixed(1) : Math.round(r).toLocaleString("en-GB")) + " km";
+  const fmtN = v => v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1000 ? Math.round(v).toLocaleString("en-GB") : v >= 10 ? Math.round(v) + "" : v >= 1 ? v.toFixed(1) : v >= 0.01 ? v.toFixed(2) : "<0.01";
+  const fmtS = s => s < 60 ? s.toFixed(1) + " s" : Math.floor(s / 60) + " min " + String(Math.round(s % 60)).padStart(2, "0") + " s";
+  const fmtH = h => h < 1 ? Math.round(h * 60) + " min" : h < 48 ? h.toFixed(1) + " h" : h < 24 * 60 ? Math.round(h / 24) + " days" : h < 24 * 365 ? Math.round(h / 24 / 30) + " months" : "> 1 year";
+  const fmtKt = kt => kt >= 1000 ? (kt / 1000 >= 10 ? Math.round(kt / 1000) : (kt / 1000).toFixed(1).replace(/\.0$/, "")) + " Mt" : (kt >= 10 ? Math.round(kt) : kt.toFixed(1)) + " kt";
+
+  // ================= evaluation =================
+  const LV = { fatal: ["Likely fatal", "st-fatal"], severe: ["Severe harm", "st-severe"], injury: ["Harm likely", "st-injury"], safe: ["Protected", "st-safe"] };
+  const doseLevel = d => d >= 600 ? "fatal" : d >= 200 ? "severe" : d >= 50 ? "injury" : "safe";
+  const worst = (...l) => ["fatal", "severe", "injury", "safe"].find(k => l.includes(k));
+  const TWO_WEEKS = 336;
+  function evaluate() {
+    const R = Math.hypot(S.x, S.y), psi = psiAt(R), th = thermalAt(R), rad = radAt(R);
+    const R1 = falloutH1(S.x, S.y), ta = arriveH(S.x, S.y);
+    const fo = R1 ? doseBetween(R1, ta, TWO_WEEKS) : 0;
+    const inFire = R < fireballR(), inCrater = R < craterR() * 1.5;
+    const pf = 2 * Math.pow(2, S.depth / 0.12);
+    const surviveKt = killKt(S.depth);
+    const directHit = S.burst === "ground" && inCrater && S.kt > surviveKt;
+
+    let openBlast = inFire || psi >= 10 || th >= burn3() || rad >= 600 ? "fatal" : psi >= 3 || th >= burn2() || rad >= 200 ? "severe" : psi >= 1 || th >= burn1() || rad >= 50 ? "injury" : "safe";
+    const open = worst(openBlast, doseLevel(rad + fo));
+    let houseBlast = inFire || psi >= 8 ? "fatal" : psi >= 4 || th >= 12 ? "severe" : psi >= 1 ? "injury" : "safe";
+    const houseDose = rad / 3 + fo / 3;
+    const house = worst(houseBlast, doseLevel(houseDose));
+    const bunkerDose = (rad + fo) / pf;
+    let bunker = directHit ? "fatal" : "safe";
+    bunker = worst(bunker, doseLevel(bunkerDose));
+    return { R, psi, th, rad, R1, ta, fo, inFire, inCrater, pf, directHit, open, house, bunker, houseDose, bunkerDose };
+  }
+
+  // ================= UI =================
+  const $ = id => document.getElementById(id);
+  const PRESETS = [
+    { name: "Hiroshima 1945", kt: 15, burst: "air" }, { name: "Nagasaki 1945", kt: 21, burst: "air" },
+    { name: "Submarine warhead", kt: 100, burst: "ground" }, { name: "ICBM warhead", kt: 300, burst: "ground" },
+    { name: "Megaton", kt: 1000, burst: "ground" }, { name: "Castle Bravo 1954", kt: 15000, burst: "ground", wind: 30 },
+    { name: "Heavy strategic", kt: 5000, burst: "ground" }, { name: "Tsar Bomba 1961", kt: 50000, burst: "air" },
+  ];
+  const YMIN = 0.1, YMAX = 50000, DMIN = 0.1, DMAX = 400;
+  const logTo = (v, a, b) => Math.round(1000 * Math.log(v / a) / Math.log(b / a));
+  const logFrom = (s, a, b) => a * Math.pow(b / a, s / 1000);
+
+  function card(el, title, lvl, verdict, rows, note) {
+    const [label, cls] = LV[lvl];
+    el.innerHTML = `<h3>${title}</h3><div class="pill ${cls}">${label}</div><div class="verdict">${verdict}</div><ul>${rows.map(([k, v]) => `<li><span>${k}</span><b>${v}</b></li>`).join("")}</ul><p>${note}</p>`;
+  }
+
+  function render() {
+    const e = evaluate();
+    $("yieldOut").textContent = fmtKt(S.kt);
+    $("windOut").textContent = S.wind + " km/h";
+    const bearing = Math.abs(S.y) < 0.02 * e.R ? (S.x >= 0 ? "downwind" : "upwind") : (S.x >= 0 ? "off-axis downwind" : "upwind");
+    $("posOut").textContent = fmtKm(e.R) + " " + bearing;
+    $("mapTitle").innerHTML = `<b>${fmtKt(S.kt)}</b> ${S.burst === "air" ? "airburst" : "ground burst"} · wind <b>${S.wind} km/h E</b>`;
+    document.querySelectorAll("#presets .chip").forEach(c => c.setAttribute("aria-pressed", +c.dataset.kt === S.kt));
+
+    $("r-psi").textContent = fmtN(e.psi) + " psi";
+    $("r-psi-s").textContent = e.psi >= 20 ? "Concrete buildings destroyed" : e.psi >= 5 ? "Most houses collapse" : e.psi >= 1 ? "Windows shatter" : "Minor damage";
+    $("r-th").textContent = fmtN(e.th) + " cal/cm²";
+    $("r-th-s").textContent = e.th >= burn3() ? "Third-degree burns" : e.th >= burn2() ? "Second-degree burns" : e.th >= burn1() ? "First-degree burns" : "Below burn threshold";
+    $("r-rad").textContent = fmtN(e.rad) + " rem";
+    $("r-rad-s").textContent = e.rad >= 600 ? "Lethal dose" : e.rad >= 200 ? "Radiation sickness" : e.rad >= 50 ? "Measurable harm" : "Low";
+    $("r-fo").textContent = e.R1 ? fmtN(e.R1) + " rem/h" : "None";
+    $("r-fo-s").textContent = S.burst === "air" ? "Airbursts make little local fallout" : e.R1 ? "Outdoor dose rate, 1 hour after" : "You are outside the plume";
+    $("r-fa").textContent = e.R1 ? fmtH(e.ta) : "–";
+    $("r-fa-s").textContent = e.R1 ? "Time to get below ground" : "No local fallout here";
+
+    const foRow = v => e.R1 ? fmtN(v) + " rem" : "None";
+    card($("c-open"), "Out in the open", e.open, e.open === "safe" ? "Low risk" : "Fully exposed",
+      [["Blast", fmtN(e.psi) + " psi"], ["Heat flash", fmtN(e.th) + " cal/cm²"], ["Initial radiation", fmtN(e.rad) + " rem"], ["Fallout, 14 days", foRow(e.fo)]],
+      e.fo >= 600 ? "Fallout alone delivers a lethal dose within days." : e.th >= burn3() ? "The flash causes third-degree burns on exposed skin." : e.psi >= 3 ? "Blast wind and flying debris." : "Little direct harm here, but stay alert to the wind.");
+    card($("c-house"), "Inside a brick house", e.house, e.psi >= 8 ? "Collapsed" : e.house === "safe" ? "Shelters you" : "Not enough",
+      [["Blast", fmtN(e.psi) + " psi"], ["Initial radiation", fmtN(e.rad / 3) + " rem"], ["Fallout, 14 days", foRow(e.fo / 3)], ["Protection factor", "≈ 3"]],
+      e.psi >= 8 ? "A typical house collapses at this pressure." : e.fo / 3 >= 200 ? "Walls and a roof cut fallout radiation only about 3 times. Dust settles on the roof and around the walls." : "Windows blow in at 1 psi. Keep away from glass.");
+    card($("c-bunker"), `Fortes shelter at ${S.depth} m`, e.bunker,
+      e.directHit ? "Direct hit" : e.bunker === "safe" ? "Protected" : e.bunker === "injury" ? "Holding" : "Over limit",
+      [["Direct hit survived to", "≈ " + killLabel(S.depth)], ["Initial radiation", e.directHit ? "–" : fmtN(e.rad / e.pf) + " rem"], ["Fallout, 14 days", e.directHit ? "–" : (e.R1 ? fmtN(e.fo / e.pf) + " rem" : "None")], ["Protection factor", e.pf > 1e5 ? "> 100,000" : fmtN(e.pf)]],
+      e.directHit ? `A ${fmtKt(S.kt)} ground burst directly overhead digs deeper than ${S.depth} m. At this depth a Fortes shelter survives a direct hit up to about ${killLabel(S.depth)}.` : `${S.depth} m of earth carries the blast and absorbs the radiation. Filtered air keeps fallout dust out, and on-board power, water and food let you stay sealed for 12+ months.`);
+
+    renderLadder(e); renderCloud(); renderLegend(); renderCheck(); draw();
+  }
+
+  function renderLadder(e) {
+    const R1 = e.R1 || 0;
+    const rows = [["H+1 hour", 1], ["H+7 hours", 7], ["H+2 days", 49], ["H+2 weeks", 343], ["H+3 months", 2401]];
+    const head = `<tr><th>Time</th><th>Outside</th><th>House</th><th>Fortes</th></tr>`;
+    const body = rows.map(([k, t]) => {
+      const r = R1 * Math.pow(t, -1.2);
+      return `<tr><td>${k}</td><td>${R1 ? fmtN(r) : "–"}</td><td>${R1 ? fmtN(r / 3) : "–"}</td><td>${R1 ? fmtN(r / e.pf) : "–"}</td></tr>`;
+    }).join("");
+    $("ladder").innerHTML = `<thead>${head}</thead><tbody>${body}</tbody><caption style="caption-side:bottom;text-align:left;font-size:12px;color:var(--muted);padding-top:8px">Dose rate in rem per hour at your position${R1 ? "" : " (no fallout here: move into the plume or pick a ground burst)"}.</caption>`;
+  }
+
+  function renderCloud() {
+    const H = cloudTop(), Rc = cloudRadius();
+    const maxH = Math.max(H * 1.15, 14), W = 360, Hpx = 220, g = 196;
+    const ky = (g - 14) / maxH;
+    const capW = Math.min(Rc * 2 * ky, W - 40), capH = Math.max(H * 0.35 * ky, 10);
+    const top = g - H * ky;
+    const ticks = [];
+    const step = maxH > 40 ? 10 : maxH > 20 ? 5 : 2;
+    for (let h = 0; h <= maxH; h += step) ticks.push(`<line x1="34" x2="${W}" y1="${g - h * ky}" y2="${g - h * ky}" stroke="#2a3350"/><text x="28" y="${g - h * ky + 4}" text-anchor="end" fill="#8f97ad" font-size="10" font-family="JetBrains Mono, monospace">${h}</text>`);
+    const ref = (h, label) => h < maxH ? `<line x1="34" x2="${W}" y1="${g - h * ky}" y2="${g - h * ky}" stroke="#8f97ad" stroke-dasharray="3 4"/><text x="${W - 4}" y="${g - h * ky - 4}" text-anchor="end" fill="#8f97ad" font-size="10" font-family="JetBrains Mono, monospace">${label}</text>` : "";
+    const cx = 34 + (W - 34) / 2;
+    $("cloudSvg").innerHTML = `<svg viewBox="0 0 ${W} ${Hpx}" role="img" aria-label="Mushroom cloud reaches ${H.toFixed(0)} km">
+      ${ticks.join("")}
+      ${ref(8.85, "Everest 8.8 km")}${ref(11, "Airliners 11 km")}
+      <path d="M${cx - 6} ${g} L${cx - 3} ${top + capH * 0.6} L${cx + 3} ${top + capH * 0.6} L${cx + 6} ${g} Z" fill="#8f97ad" opacity=".6"/>
+      <ellipse cx="${cx}" cy="${top + capH / 2}" rx="${capW / 2}" ry="${capH / 2}" fill="#f5a524" opacity=".85"/>
+      <ellipse cx="${cx}" cy="${top + capH * 0.38}" rx="${capW / 2.6}" ry="${capH / 3}" fill="#ef4444" opacity=".7"/>
+      <line x1="34" x2="${W}" y1="${g}" y2="${g}" stroke="#f3f0ea"/>
+      <text x="38" y="${g + 16}" fill="#8f97ad" font-size="10" font-family="JetBrains Mono, monospace">km altitude · cloud ${fmtKm(Rc * 2)} wide</text>
+    </svg>`;
+    $("cloudNote").textContent = `The cloud tops out near ${H.toFixed(0)} km within about 10 minutes. ${S.burst === "ground" ? "A ground burst sucks tonnes of soil into it, and that dust falls back as fallout across the area downwind." : "An airburst keeps the fireball off the ground, so it lifts far less soil and makes little local fallout."}`;
+  }
+
+  const FALL = [[1000, "#b48cff", "1,000 rem/h · lethal within an hour"], [100, "#9a7ae0", "100 rem/h · lethal within a day"], [10, "#7a63b8", "10 rem/h · sickness within days"], [1, "#56488a", "1 rem/h · shelter needed"]];
+  function rings() {
+    const l = [];
+    if (S.burst === "ground") l.push({ name: "Crater", r: craterR(), c: "#ffffff" });
+    l.push({ name: "Fireball", r: fireballR(), c: "#ffd166" });
+    l.push({ name: "20 psi · concrete buildings destroyed", r: solve(psiAt, 20), c: "#ef4444" });
+    l.push({ name: "500 rem · lethal initial radiation", r: solve(radAt, 500), c: "#3ecf8e" });
+    l.push({ name: "5 psi · most houses collapse", r: solve(psiAt, 5), c: "#f97316" });
+    l.push({ name: "Third-degree burns", r: solve(thermalAt, burn3()), c: "#f5a524" });
+    l.push({ name: "1 psi · windows shatter", r: solve(psiAt, 1), c: "#8f97ad" });
+    return l.filter(x => x.r > 0).sort((a, b) => b.r - a.r);
+  }
+  function renderLegend() {
+    const fl = S.burst === "ground" ? FALL.map(([d, c, n]) => `<div><i style="background:${c}"></i><span>${n}</span><b>${fmtKm(plume(d).a * 2)} long</b></div>`).join("") : "";
+    $("legend").innerHTML = rings().map(r => `<div><i style="background:${r.c}"></i><span>${r.name}</span><b>${fmtKm(r.r)}</b></div>`).join("") + fl;
+  }
+
+  // ================= model check against recorded events =================
+  function withState(over, fn) { const save = { ...S }; Object.assign(S, over); const r = fn(); Object.assign(S, save); return r; }
+  const bravoDose = x => withState({ kt: 15000, burst: "ground", wind: 30 }, () => { const R1 = falloutH1(x, 0), ta = x / 30; return doseBetween(R1, ta, ta + 36); });
+  const CHECKS = [
+    ["Hiroshima, 1945 · 15 kt airburst", "Radius of near-total destruction", "≈ 1.6 km", 1.6, () => withState({ kt: 15, burst: "air" }, () => solve(psiAt, 5)), fmtKm],
+    ["Hiroshima, 1945 · 15 kt airburst", "Lethal initial radiation zone", "≈ 1.0–1.2 km", 1.1, () => withState({ kt: 15, burst: "air" }, () => solve(radAt, 500)), fmtKm],
+    ["Glasstone reference · 1 Mt airburst", "Fireball radius", "≈ 0.96 km", 0.96, () => withState({ kt: 1000, burst: "air" }, fireballR), fmtKm],
+    ["OTA reference · 1 Mt airburst", "5 psi radius", "7.0 km", 7.0, () => withState({ kt: 1000, burst: "air" }, () => solve(psiAt, 5)), fmtKm],
+    ["OTA reference · 1 Mt airburst", "1 psi radius", "18.6 km", 18.6, () => withState({ kt: 1000, burst: "air" }, () => solve(psiAt, 1)), fmtKm],
+    ["Castle Bravo, 1954 · 15 Mt surface", "36-hour fallout dose, Rongelap 160 km", "≈ 2,300 R", 2300, () => bravoDose(160), v => fmtN(v) + " R"],
+    ["Castle Bravo, 1954 · 15 Mt surface", "36-hour fallout dose, 200 km", "≈ 1,000 R", 1000, () => bravoDose(200), v => fmtN(v) + " R"],
+  ];
+  let checked = false;
+  function renderCheck() {
+    if (checked) return; checked = true;
+    $("check").innerHTML = `<thead><tr><th>Event</th><th>Measure</th><th>Recorded</th><th>This model</th><th>Diff</th></tr></thead><tbody>` +
+      CHECKS.map(([ev, what, rec, recV, fn, f]) => { const m = fn(), d = Math.round((m / recV - 1) * 100); return `<tr><td>${ev}</td><td>${what}</td><td>${rec}</td><td>${f(m)}</td><td>${d > 0 ? "+" : ""}${d}%</td></tr>`; }).join("") + `</tbody>`;
+  }
+
+  // ================= map =================
+  const cv = $("map"), ctx = cv.getContext("2d");
+  let anim = null;
+  function view() {
+    const rs = rings(), w = cv.clientWidth, h = cv.clientHeight;
+    const maxRing = rs.length ? rs[0].r : 1;
+    let east = Math.max(maxRing, S.x), west = Math.max(maxRing, -S.x), ns = Math.max(maxRing, Math.abs(S.y));
+    if (S.burst === "ground") { const p = plume(10); east = Math.max(east, p.cx + p.a); ns = Math.max(ns, p.b); }
+    east *= 1.08; west *= 1.15; ns *= 1.15;
+    const scale = Math.min(w / (east + west), h / (2 * ns));
+    return { rs, w, h, scale, cx: west * scale + (w - (east + west) * scale) / 2, cy: h / 2 };
+  }
+  function draw(shock = null, flash = 0) {
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const v = view();
+    ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = "rgba(143,151,173,0.08)"; ctx.lineWidth = 1;
+    for (let x = v.cx % 40; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    for (let y = v.cy % 40; y < h; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+    if (S.burst === "ground") {
+      [...FALL].reverse().forEach(([d, c]) => {
+        const p = plume(d);
+        ctx.beginPath(); ctx.ellipse(v.cx + p.cx * v.scale, v.cy, p.a * v.scale, Math.max(p.b * v.scale, 1), 0, 0, Math.PI * 2);
+        ctx.fillStyle = c + "40"; ctx.fill(); ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.stroke();
+      });
+    }
+    v.rs.forEach(r => {
+      ctx.beginPath(); ctx.arc(v.cx, v.cy, Math.max(r.r * v.scale, 1.5), 0, Math.PI * 2);
+      ctx.fillStyle = r.c + "1f"; ctx.fill(); ctx.strokeStyle = r.c; ctx.lineWidth = 1.5; ctx.stroke();
+    });
+
+    // wind arrow
+    ctx.strokeStyle = "#8f97ad"; ctx.fillStyle = "#8f97ad"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(w - 70, 20); ctx.lineTo(w - 22, 20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w - 22, 20); ctx.lineTo(w - 30, 15); ctx.lineTo(w - 30, 25); ctx.fill();
+    ctx.font = "600 10px 'JetBrains Mono', monospace"; ctx.fillText("WIND", w - 70, 36);
+
+    // scale bar
+    const nice = [0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
+    const target = (w / v.scale) / 5, sb = nice.reduce((a, b) => Math.abs(b - target) < Math.abs(a - target) ? b : a);
+    ctx.strokeStyle = "#f3f0ea"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(14, h - 16); ctx.lineTo(14 + sb * v.scale, h - 16); ctx.stroke();
+    ctx.fillStyle = "#f3f0ea"; ctx.font = "600 11px 'JetBrains Mono', monospace"; ctx.fillText(fmtKm(sb), 14, h - 22);
+
+    ctx.fillStyle = "#ef4444"; ctx.beginPath(); ctx.arc(v.cx, v.cy, 3, 0, Math.PI * 2); ctx.fill();
+
+    if (shock !== null) {
+      ctx.beginPath(); ctx.arc(v.cx, v.cy, shock * v.scale, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(243,240,234,0.9)"; ctx.lineWidth = 3; ctx.stroke();
+    }
+
+    const mx = v.cx + S.x * v.scale, my = v.cy - S.y * v.scale;
+    ctx.strokeStyle = "#f3f0ea"; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(v.cx, v.cy); ctx.lineTo(mx, my); ctx.stroke(); ctx.setLineDash([]);
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(mx, my, 7, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx - 12, my); ctx.lineTo(mx - 4, my); ctx.moveTo(mx + 4, my); ctx.lineTo(mx + 12, my);
+    ctx.moveTo(mx, my - 12); ctx.lineTo(mx, my - 4); ctx.moveTo(mx, my + 4); ctx.lineTo(mx, my + 12); ctx.stroke();
+    const lbl = "YOU · " + fmtKm(Math.hypot(S.x, S.y)), lw = ctx.measureText(lbl).width;
+    ctx.fillStyle = "#f3f0ea"; ctx.fillText(lbl, Math.max(6, Math.min(mx - lw / 2, w - lw - 6)), my < 30 ? my + 26 : my - 18);
+    if (flash > 0) { ctx.fillStyle = `rgba(255,250,235,${flash})`; ctx.fillRect(0, 0, w, h); }
+  }
+
+  function detonate() {
+    if (anim) cancelAnimationFrame(anim);
+    const R = Math.hypot(S.x, S.y), tYou = arrival(R);
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { $("clock").textContent = "Blast reaches you at T+ " + fmtS(tYou); return; }
+    const endR = Math.max(solve(psiAt, 1), R) * 1.05, tEnd = arrival(endR), dur = 3400, t0 = performance.now();
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur), simT = tEnd * k;
+      let lo = 0, hi = endR; for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; arrival(m) < simT ? lo = m : hi = m; }
+      $("clock").textContent = "T+ " + fmtS(simT) + (simT >= tYou ? " · blast has reached you" : "");
+      draw(lo, Math.max(0, 0.9 - k * 6));
+      if (k < 1) anim = requestAnimationFrame(step); else { anim = null; draw(); }
+    };
+    anim = requestAnimationFrame(step);
+  }
+
+  // ================= wiring =================
+  const pe = $("presets");
+  PRESETS.forEach(p => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.id = "preset-" + p.kt; b.dataset.kt = p.kt;
+    b.innerHTML = `${p.name}<small>${fmtKt(p.kt)}</small>`;
+    b.onclick = () => {
+      S.kt = p.kt; S.burst = p.burst; if (p.wind) { S.wind = p.wind; $("wind").value = p.wind; }
+      $("yield").value = logTo(S.kt, YMIN, YMAX);
+      document.querySelectorAll("[data-burst]").forEach(c => c.setAttribute("aria-pressed", c.dataset.burst === S.burst));
+      render();
+    };
+    pe.appendChild(b);
+  });
+  $("yield").value = logTo(S.kt, YMIN, YMAX);
+  $("yield").oninput = e => { const v = logFrom(+e.target.value, YMIN, YMAX); S.kt = +(v < 10 ? v.toFixed(1) : v < 1000 ? Math.round(v) : Math.round(v / 100) * 100); render(); };
+  document.querySelectorAll("[data-burst]").forEach(b => b.onclick = () => {
+    S.burst = b.dataset.burst; document.querySelectorAll("[data-burst]").forEach(c => c.setAttribute("aria-pressed", c === b)); render();
+  });
+  $("wind").oninput = e => { S.wind = +e.target.value; render(); };
+  const depthEl = $("depthChips");
+  DEPTHS.forEach(d => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.id = "depth-" + d; b.dataset.d = d; b.textContent = d + " m";
+    b.setAttribute("aria-pressed", d === S.depth);
+    b.onclick = () => { S.depth = d; depthEl.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b)); render(); };
+    depthEl.appendChild(b);
+  });
+  $("dist").value = logTo(S.x, DMIN, DMAX);
+  $("dist").oninput = e => { S.x = logFrom(+e.target.value, DMIN, DMAX); S.y = 0; render(); };
+  cv.addEventListener("click", ev => {
+    const r = cv.getBoundingClientRect(), v = view();
+    S.x = (ev.clientX - r.left - v.cx) / v.scale; S.y = -(ev.clientY - r.top - v.cy) / v.scale;
+    const d = Math.hypot(S.x, S.y); if (d < DMIN) { S.x = DMIN; S.y = 0; }
+    $("dist").value = logTo(Math.max(DMIN, Math.min(DMAX, Math.hypot(S.x, S.y))), DMIN, DMAX);
+    render();
+  });
+  $("go").onclick = detonate;
+  new ResizeObserver(() => draw()).observe(cv);
+  if (document.fonts) document.fonts.ready.then(() => draw());
+  render();
+})();
+</script>
+</body>
+</html>

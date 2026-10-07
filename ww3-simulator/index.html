@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes WW3 Simulator</title>
+<meta name="description" content="Follow one family through a third world war, next to Fortes members sheltering 30, 50 or 100 metres underground.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+</head>
+<body>
+<style>
+/* Layout: Fortes bracket frame. Scenario controls, then a side-view scene (surface above, strata to 110 m below)
+   driven by one timeline scrubber; a two-column survival board (unprotected vs Fortes) and an event log
+   follow the same clock. Depth tiers, systems and sources close the page. Single dark look by choice. */
+:root {
+  --ink: #0f1526; --panel: #161d33; --line: #2a3350; --cream: #f3f0ea; --muted: #8f97ad;
+  --red: #ef4444; --amber: #f5a524; --yellow: #e8d36a; --green: #3ecf8e; --fall: #b48cff;
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ink); color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-inline: 16px; padding-block: 24px 40px; }
+.frame { position: relative; max-width: 1240px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: 56px; height: 56px; border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(34px, 6.2vw, 74px); line-height: .95; margin: 18px 0 10px; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 68ch; margin: 0 0 26px; font-size: 16px; }
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 32px); margin: 44px 0 16px; line-height: 1; text-wrap: balance; }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; }
+
+.setup { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 1000px) { .setup { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .setup { grid-template-columns: minmax(0, 1fr); } }
+.opts { display: grid; gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 8px 10px; text-align: left; cursor: pointer; border-radius: 2px; width: 100%; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.row3 .chip { text-align: center; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+input[type=range] { width: 100%; accent-color: var(--red); }
+.sub { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 4px; gap: 8px; }
+
+.stage { margin-top: 26px; background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; }
+.stagehead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.clock { font-family: var(--f-display); font-size: clamp(26px, 4vw, 40px); line-height: 1; font-variant-numeric: tabular-nums; }
+.phase { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--red); }
+canvas#scene { width: 100%; aspect-ratio: 16 / 9; display: block; background: #0b1020; max-width: 100%; }
+@media (max-width: 600px) { canvas#scene { aspect-ratio: 3 / 4; } .transport { grid-template-columns: minmax(0, 1fr); } .metric { grid-template-columns: minmax(0, 1fr); } }
+.transport { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.play { font-family: var(--f-display); text-transform: uppercase; font-size: 16px; background: var(--red); color: var(--ink); border: 0; padding: 12px 18px; cursor: pointer; border-radius: 2px; min-width: 120px; }
+.ticks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); font-family: var(--f-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.ticks span { border-left: 1px solid var(--line); padding-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticks span.on { color: var(--cream); border-left-color: var(--red); }
+
+.board { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 340px); gap: 14px; margin-top: 14px; }
+@media (max-width: 1000px) { .board { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .log { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .board { grid-template-columns: minmax(0, 1fr); } }
+.side { border: 1px solid var(--line); padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.side.fortes { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.side h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.side.fortes h3 { color: var(--red); }
+.overall { font-family: var(--f-display); font-size: 24px; text-transform: uppercase; line-height: 1.05; }
+.metric { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4px 10px; border-top: 1px solid var(--line); padding-top: 9px; align-items: start; }
+.metric .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.metric .v { font-size: 14px; min-width: 0; }
+.metric .v b { font-family: var(--f-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 8px; height: 8px; margin-right: 7px; transform: translateY(-1px); }
+.s-ok { background: var(--green); } .s-warn { background: var(--yellow); } .s-bad { background: var(--amber); } .s-dead { background: var(--red); }
+.t-ok { color: var(--green); } .t-warn { color: var(--yellow); } .t-bad { color: var(--amber); } .t-dead { color: var(--red); }
+.log { border: 1px solid var(--line); padding: 16px; min-width: 0; display: grid; gap: 10px; align-content: start; }
+.log ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; max-height: 540px; overflow-y: auto; }
+.log li { font-size: 13px; color: var(--muted); border-left: 2px solid var(--line); padding-left: 10px; opacity: .45; }
+.log li.past { opacity: 1; }
+.log li.now { border-left-color: var(--red); color: var(--cream); }
+.log li b { display: block; font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--cream); font-weight: 600; }
+
+.tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .tiers { grid-template-columns: minmax(0, 1fr); } }
+.tier { border: 1px solid var(--line); padding: 18px; display: grid; gap: 10px; align-content: start; cursor: pointer; text-align: left; color: inherit; background: transparent; font: inherit; }
+.tier[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.tier .d { font-family: var(--f-display); font-size: 52px; line-height: .9; color: var(--cream); }
+.tier .d span { font-size: 22px; color: var(--red); margin-left: 4px; }
+.tier ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.tier li { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+.tier li span { color: var(--muted); }
+.tier li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.tier p { margin: 0; font-size: 13px; color: var(--muted); }
+
+.systems { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+@media (max-width: 860px) { .systems { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@media (max-width: 520px) { .systems { grid-template-columns: minmax(0, 1fr); } }
+.sys { padding: 16px 16px 16px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.sys .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--red); font-weight: 600; }
+.sys h4 { margin: 4px 0 6px; font-size: 17px; }
+.sys p { margin: 0; font-size: 14px; color: var(--muted); max-width: 46ch; }
+
+.facts { width: 100%; border-collapse: collapse; font-size: 14px; }
+.facts td { border-top: 1px solid var(--line); padding: 9px 12px 9px 0; vertical-align: top; }
+.facts td:first-child { color: var(--muted); width: 38%; }
+.facts td:last-child { font-family: var(--f-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.tablewrap { overflow-x: auto; }
+.note { font-size: 13px; color: var(--muted); max-width: 90ch; }
+.note a, .fine a { color: var(--cream); }
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); display: flex; align-items: baseline; gap: 12px; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 95ch; margin-top: 18px; }
+</style>
+
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">World War 3 simulator</div>
+    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+  </div>
+  <h1>Day −14 to year 3. <em>Who is still standing?</em></h1>
+  <p class="lede">Follow one family through a third world war: the bombing campaign, the nuclear strikes, the fallout, then the months without power, water and food. Next to them, Fortes members sit out the same timeline 30, 50 or 100 metres underground.</p>
+
+  <div class="setup">
+    <div>
+      <div class="label">War scenario</div>
+      <div class="opts" id="opt-scen"></div>
+    </div>
+    <div>
+      <div class="label">Where you live</div>
+      <div class="opts" id="opt-loc"></div>
+    </div>
+    <div>
+      <div class="label">Fortes shelter depth</div>
+      <div class="row3" id="opt-depth"></div>
+      <div class="label" style="margin-top:16px">Fortes supplies</div>
+      <input type="range" id="supply" min="6" max="36" step="6" value="12" aria-label="Fortes supply duration in months">
+      <div class="sub"><span>6 mo</span><output id="supplyOut">12 months</output><span>36 mo</span></div>
+    </div>
+    <div>
+      <div class="label">Supplies the family has at home</div>
+      <div class="opts" id="opt-home"></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="stagehead">
+      <div class="clock" id="clock">Day −14</div>
+      <div class="phase" id="phase">Conventional war</div>
+    </div>
+    <canvas id="scene" aria-label="Side view of the surface and the ground below, showing the family's house and the Fortes shelter as the war unfolds"></canvas>
+    <div class="transport">
+      <button class="play" id="play">Play</button>
+      <div>
+        <input type="range" id="time" min="0" max="1000" value="0" aria-label="Timeline">
+        <div class="ticks" id="ticks"><span>Bombing</span><span>Strike</span><span>Fallout</span><span>Collapse</span><span>Winter</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="side" id="b-home"></div>
+    <div class="side fortes" id="b-fortes"></div>
+    <div class="log"><div class="label">What is happening</div><ol id="log"></ol></div>
+  </div>
+
+  <h2>Three depths. One standard.</h2>
+  <div class="tiers" id="tiers"></div>
+  <p class="note" style="margin-top:12px">Overhead and near-miss figures are engineering estimates for a surface burst in dry soil, using the Glasstone &amp; Dolan crater scaling and treating twice the crater depth as the damage zone. Rock performs better. Your actual rating depends on the geology at your site and the Fortes design for it.</p>
+
+  <h2>How Fortes keeps members alive</h2>
+  <div class="systems">
+    <div class="sys"><div class="k">Blast</div><h4>Earth overburden and blast doors</h4><p>Tens of metres of earth and rock absorb the shock. Even a large airburst over a city peaks at around 80 psi at ground level, a fraction of what the overburden carries.</p></div>
+    <div class="sys"><div class="k">Radiation</div><h4>Depth as shielding</h4><p>Every 10 cm or so of packed earth halves gamma radiation. At 30 m that happens around 300 times, so fallout above cannot be measured below.</p></div>
+    <div class="sys"><div class="k">Air</div><h4>NBC filtration</h4><p>Intake air passes through particle and activated-carbon filters, and the shelter is held at overpressure, so fallout dust, smoke and chemical agents cannot leak in.</p></div>
+    <div class="sys"><div class="k">Water</div><h4>Stored and purified water</h4><p>Members never queue at a broken tap or drink from a contaminated river. Water is stored and treated inside the sealed envelope.</p></div>
+    <div class="sys"><div class="k">Food</div><h4>12+ months sustained</h4><p>Long-life food for the full household, sized to the stay. Members are not competing for empty shelves while the world's harvests fail.</p></div>
+    <div class="sys"><div class="k">Power and warmth</div><h4>Off-grid systems</h4><p>Independent power keeps light, air and comms running when the grid is gone. Below about 10 m the ground holds a steady temperature all year, whatever the sky above is doing.</p></div>
+  </div>
+
+  <h2>The facts behind the simulation</h2>
+  <div class="tablewrap">
+    <table class="facts">
+      <tr><td>Nuclear warheads in the world</td><td>About 12,241 (January 2025), about 3,912 deployed on missiles and aircraft.</td><td>FAS 2025</td></tr>
+      <tr><td>Warning time</td><td>About 30 minutes for an intercontinental missile, 10 to 15 minutes from a submarine.</td><td>Union of Concerned Scientists</td></tr>
+      <tr><td>Blast, heat, initial radiation</td><td>Calibrated to Hiroshima, the OTA 1 Mt reference case and Glasstone fireball data (all within 11%).</td><td>OTA 1979, Glasstone &amp; Dolan</td></tr>
+      <tr><td>Fallout</td><td>Plume calibrated to Castle Bravo doses on Rongelap. Decay follows the 7–10 rule.</td><td>Glasstone &amp; Dolan</td></tr>
+      <tr><td>Famine</td><td>Limited war (about 100 warheads): global food calories fall 7%. Large regional war: more than 2 billion deaths. US–Russia war: more than 5 billion deaths; calories fall about 90% three to four years on.</td><td>Xia et al., Nature Food 2022</td></tr>
+      <tr><td>Nuclear winter</td><td>Smoke from burning cities blocks sunlight. The largest scenario cools the planet by around 7 to 8 °C for several years.</td><td>Robock et al. 2007</td></tr>
+      <tr><td>Bunker-busting bombs</td><td>GBU-28 penetrates about 30 m of earth. GBU-57 is reported to reach about 60 m.</td><td>US Air Force, public reports</td></tr>
+      <tr><td>Survival without supplies</td><td>About 3 days without water, about 3 weeks without food.</td><td>General medical guidance</td></tr>
+      <tr><td>Home supplies advice</td><td>UK government: at least 3 days. US Ready.gov: up to 2 weeks.</td><td>gov.uk, ready.gov</td></tr>
+    </table>
+  </div>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Book a confidential consultation → <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">This is a scenario model, not a forecast. The sequence of events is a plausible escalation built from published research; no one can predict the timing, targets or scale of a real war. Local effects use the same calibrated model as the Fortes nuclear simulator, with a steady 24 km/h wind and flat terrain. Shelter depths, supply durations and protection figures are illustrative; confirm the specification of your own build with Fortes. Sources: <a href="https://fas.org/initiative/status-world-nuclear-forces/" target="_blank" rel="noopener">FAS</a>, <a href="https://atomicarchive.com/resources/documents/effects/ota/chapter-2-2-2.html" target="_blank" rel="noopener">OTA, The Effects of Nuclear War</a>, <a href="https://www.colorado.edu/today/2022/08/15/nuclear-war-would-cause-global-famine-and-kill-billions-study-finds" target="_blank" rel="noopener">Xia et al. 2022</a>, Glasstone &amp; Dolan, The Effects of Nuclear Weapons.</p>
+</div>
+
+<script>
+(() => {
+  // ================= calibrated effects model (shared with the Fortes nuclear simulator) =================
+  const TABLES = {
+    ground: { Z: [0.03, 0.06, 0.1, 0.15, 0.22, 0.32, 0.48, 0.65, 1.21, 2.0, 4.0, 10], P: [5000, 1200, 200, 60, 20, 10, 5, 3, 1, 0.5, 0.2, 0.06] },
+    air:    { Z: [0.03, 0.1, 0.18, 0.28, 0.45, 0.70, 0.95, 1.86, 3.0, 6.0, 15], P: [80, 60, 35, 20, 10, 5, 3, 1, 0.5, 0.2, 0.06] },
+  };
+  function psiAt(kt, burst, R) {
+    const { Z: z, P: p } = TABLES[burst], Z = R / Math.cbrt(kt), n = z.length;
+    if (Z <= z[0]) return p[0];
+    if (Z >= z[n - 1]) return p[n - 1] * Math.pow(z[n - 1] / Z, 1.2);
+    for (let i = 0; i < n - 1; i++) if (Z <= z[i + 1]) {
+      const t = Math.log(Z / z[i]) / Math.log(z[i + 1] / z[i]);
+      return Math.exp(Math.log(p[i]) + t * Math.log(p[i + 1] / p[i]));
+    }
+  }
+  const thermalAt = (kt, burst, R) => { const f = burst === "air" ? 0.35 : 0.18, c = Math.max(R, 0.01) * 1e5; return f * kt * 1e12 / (4 * Math.PI * c * c) * Math.exp(-R / 25); };
+  const radAt = (kt, R) => { const lam = 0.35 * Math.pow(kt / 15, 0.1), r = Math.max(R, 0.05); return 1480 * kt * Math.exp(-r / lam) / (r * r); };
+  const burn3 = kt => 6 * Math.pow(kt, 0.074);
+  const WIND = 24;
+  function falloutH1(kt, x) { // rem/h at H+1 on the downwind axis, x km from a ground burst
+    const ins = D => { const L = 24 * Math.pow(kt, 0.45) * Math.pow(D, -0.33); const cx = L / 2 - 0.05 * L, a = L / 2 * 1.05; return Math.abs(x - cx) <= a; };
+    if (!ins(0.01)) return 0;
+    let lo = 0.01, hi = 1e5;
+    for (let i = 0; i < 60; i++) { const m = Math.sqrt(lo * hi); ins(m) ? lo = m : hi = m; }
+    return lo;
+  }
+  const doseBetween = (R1, ta, te) => te <= ta ? 0 : 5 * R1 * (Math.pow(ta, -0.2) - Math.pow(te, -0.2));
+  const craterDepthM = kt => 9 * Math.pow(kt, 0.294);
+  const craterRadiusM = kt => 18 * Math.pow(kt, 0.294);
+
+  // ================= scenario data =================
+  const SCEN = {
+    limited: { name: "Limited nuclear war", sub: "≈100 warheads · 15 kt", kt: 15, baseKt: 15, cool: 1.5,
+      famine: "Global food calories fall about 7% within five years.", famineShort: "Food prices spike worldwide" },
+    major: { name: "Major nuclear war", sub: "≈500 warheads · 100 kt", kt: 100, baseKt: 300, cool: 5,
+      famine: "More than 2 billion people die of famine in comparable studies.", famineShort: "Mass famine across most countries" },
+    global: { name: "Full global exchange", sub: "≈4,400 warheads · 100 kt", kt: 100, baseKt: 300, cool: 8,
+      famine: "More than 5 billion deaths from famine; 75% of the world starving within two years.", famineShort: "Global famine" },
+  };
+  const LOC = {
+    city: { name: "Capital city", sub: "2 km from the aim point", cityKm: 2, baseKm: null },
+    suburb: { name: "Suburbs", sub: "12 km from the city centre", cityKm: 12, baseKm: null },
+    downwind: { name: "Town near a military base", sub: "60 km downwind", cityKm: null, baseKm: 60 },
+    rural: { name: "Countryside", sub: "200 km downwind of targets", cityKm: null, baseKm: 200 },
+  };
+  const HOME = { d3: { name: "3 days", sub: "UK government minimum", days: 3 }, d14: { name: "2 weeks", sub: "US Ready.gov advice", days: 14 }, d0: { name: "Almost nothing", sub: "Most households", days: 1 } };
+  const DEPTHS = [30, 50, 100];
+  const S = { scen: "major", loc: "suburb", depth: 50, supply: 12, home: "d3", slider: 0, playing: false };
+
+  // ================= timeline mapping (hours from first nuclear detonation) =================
+  const SEGS = [[-336, -0.5, "lin", "Conventional war"], [-0.5, 1, "lin", "Nuclear strike"], [1, 336, "log", "Fallout"], [336, 4380, "log", "Collapse"], [4380, 26280, "log", "Nuclear winter"]];
+  function tFromSlider(v) {
+    const i = Math.min(4, Math.floor(v / 200)), k = (v - i * 200) / 200, [a, b, mode] = SEGS[i];
+    return mode === "lin" ? a + (b - a) * k : a * Math.pow(b / a, k);
+  }
+  const segIndex = v => Math.min(4, Math.floor(v / 200));
+  function fmtTime(t) {
+    if (t < -0.75) return "Day −" + Math.ceil(-t / 24);
+    if (t < 0) return "T− " + Math.ceil(-t * 60) + " min";
+    if (t < 1) return "T+ " + Math.floor(t * 60) + " min";
+    if (t < 48) return "H+" + Math.floor(t) + " h";
+    if (t < 24 * 60) return "Day " + Math.floor(t / 24);
+    if (t < 24 * 365) return "Month " + Math.floor(t / 730);
+    return "Year " + (t / 8760).toFixed(1);
+  }
+  const fmtN = v => v >= 1e5 ? Math.round(v).toLocaleString("en-GB") : v >= 100 ? Math.round(v).toLocaleString("en-GB") : v >= 10 ? Math.round(v) + "" : v >= 1 ? v.toFixed(1) : v >= 0.01 ? v.toFixed(2) : "0";
+  const fmtDays = d => d >= 60 ? Math.round(d / 30.4) + " months" : d >= 2 ? Math.round(d) + " days" : d > 0 ? Math.round(d * 24) + " hours" : "none";
+
+  // ================= simulation =================
+  function local() {
+    const sc = SCEN[S.scen], lc = LOC[S.loc];
+    const e = { psi: 0, th: 0, rad: 0, R1: 0, ta: Infinity, blastAt: Infinity };
+    if (lc.cityKm != null) {
+      e.psi = psiAt(sc.kt, "air", lc.cityKm); e.th = thermalAt(sc.kt, "air", lc.cityKm); e.rad = radAt(sc.kt, lc.cityKm);
+      e.blastAt = lc.cityKm / 0.343 / 3600;
+      // Other cities' ground-burst bases still drop some fallout on large wars
+      if (S.scen !== "limited") { e.R1 = falloutH1(sc.baseKt, 120); e.ta = 120 / WIND; }
+    } else {
+      e.R1 = falloutH1(sc.baseKt, lc.baseKm); e.ta = lc.baseKm / WIND;
+      e.psi = psiAt(sc.baseKt, "ground", lc.baseKm); e.th = thermalAt(sc.baseKt, "ground", lc.baseKm);
+      e.blastAt = lc.baseKm / 0.343 / 3600;
+    }
+    if (S.scen === "limited" && S.loc === "rural") { e.R1 = 0; }
+    return e;
+  }
+
+  const LEVEL = { ok: 0, warn: 1, bad: 2, dead: 3 };
+  const worstOf = list => list.reduce((a, b) => LEVEL[b] > LEVEL[a] ? b : a, "ok");
+
+  function homeState(t, e) {
+    const sc = SCEN[S.scen], supplies = HOME[S.home].days;
+    const m = {};
+    // Blast and heat
+    if (t < 0) m.blast = ["ok", "Conventional strikes target infrastructure, not homes. Shelter from shrapnel and glass."];
+    else if (t < e.blastAt) m.blast = ["warn", `Flash seen. Blast wave arrives in ${Math.max(0, Math.round((e.blastAt - t) * 3600))} s.`];
+    else if (e.psi >= 8) m.blast = ["dead", `<b>${fmtN(e.psi)} psi</b>. The house collapses on the family.`];
+    else if (e.psi >= 4 || e.th >= 12) m.blast = ["bad", `<b>${fmtN(e.psi)} psi</b>. Walls fail, fires start, serious injuries.`];
+    else if (e.psi >= 1) m.blast = ["warn", `<b>${fmtN(e.psi)} psi</b>. Windows blow in. Cuts from flying glass.`];
+    else m.blast = ["ok", `<b>${fmtN(e.psi)} psi</b>. Little blast damage here.`];
+    // Radiation, PF 3 indoors; after water runs out they go outside to find water (PF 2)
+    const waterOut = Math.max(0, supplies * 24);
+    let dose = 0;
+    if (t >= 0) {
+      dose += e.rad / 3 * (t >= e.blastAt ? 1 : 0);
+      if (e.R1 && t > e.ta) {
+        const tSwitch = Math.max(e.ta, waterOut);
+        dose += doseBetween(e.R1, e.ta, Math.min(t, tSwitch)) / 3 + (t > tSwitch ? doseBetween(e.R1, tSwitch, t) / 2 : 0);
+      }
+    }
+    const dl = dose >= 600 ? "dead" : dose >= 200 ? "bad" : dose >= 50 ? "warn" : "ok";
+    const nowRate = e.R1 && t > e.ta ? e.R1 * Math.pow(Math.max(t, 1), -1.2) : 0;
+    m.rad = [dl, `<b>${fmtN(dose)} rem</b> so far${nowRate ? ` · outside now ${fmtN(nowRate)} rem/h` : ""}. ${dose >= 600 ? "Lethal dose." : dose >= 200 ? "Radiation sickness." : dose >= 50 ? "Raised cancer risk." : ""}`];
+    // Air
+    if (t < 0) m.air = ["ok", "Normal outside air. Smoke near strike sites."];
+    else if (e.R1 && t > e.ta && nowRate > 1) m.air = ["bad", "Fallout dust drifts in through gaps and vents. No filtration."];
+    else if (t < 24 * 30 && (S.loc === "city" || S.loc === "suburb")) m.air = ["bad", "Smoke from burning city blocks. No filtration."];
+    else m.air = ["warn", "Unfiltered air, smoke haze from fires worldwide."];
+    // Water: mains fail when the grid fails after the strike
+    let water;
+    if (t < 0) water = ["warn", "Mains water works between blackouts."];
+    else {
+      const left = supplies - t / 24;
+      if (left > 0) water = [left < 1 ? "bad" : "warn", `Taps are dry. <b>${fmtDays(left)}</b> of stored water left.`];
+      else if (-left < 3) water = ["bad", "Stored water gone. Someone has to go outside to find more."];
+      else water = ["dead", "Drinking untreated water. Disease and contamination risk."];
+    }
+    m.water = water;
+    // Food
+    let food;
+    if (t < -264) food = ["ok", "Shops still stocked."];
+    else if (t < 0) food = ["warn", "Shelves emptied by panic buying. Living on what is in the cupboard."];
+    else {
+      const left = supplies + 4 - t / 24; // cupboard food lasts a little longer than water
+      if (left > 0) food = ["warn", `<b>${fmtDays(left)}</b> of food left. No shops, no deliveries.`];
+      else if (-left < 21) food = ["bad", "Out of food. Scavenging in a ruined area."];
+      else food = ["dead", `Starvation. ${t > 4380 ? sc.famineShort + "." : "No supply chain."}`];
+    }
+    m.food = food;
+    // Power and warmth
+    const cool = coolingAt(t);
+    m.power = t < 0 ? ["warn", "Rolling blackouts after strikes on power stations."] : ["bad", `Grid down.${cool > 0.5 ? ` Outside ${fmtN(cool)} °C colder than normal, no heating.` : " No heating, light or phone network."}`];
+    if (t >= 0 && cool >= 4) m.power[0] = "dead";
+    const overall = worstOf(Object.values(m).map(x => x[0]));
+    return { m, overall, dose };
+  }
+
+  function coolingAt(t) { return t <= 0 ? 0 : SCEN[S.scen].cool * (1 - Math.exp(-t / (24 * 90))); }
+
+  function fortesState(t, e) {
+    const supplyH = S.supply * 730, sealed = t >= -168, m = {};
+    const pf = Math.pow(2, S.depth / 0.1);
+    m.blast = [ "ok", t < 0 ? "Members called in at Day −7. Blast doors sealed." : `Surface took <b>${fmtN(e.psi)} psi</b>. ${S.depth} m of earth and rock carries it.` ];
+    let dose = 0;
+    if (t >= 0) { dose = (e.rad + (e.R1 && t > e.ta ? doseBetween(e.R1, e.ta, Math.min(t, supplyH)) : 0)) / pf; }
+    m.rad = ["ok", `<b>${dose < 0.01 ? "0" : fmtN(dose)} rem</b> from the war. ${S.depth} m of overburden halves radiation about ${Math.round(S.depth / 0.1)} times.`];
+    m.air = ["ok", sealed ? "NBC-filtered, overpressured. No dust, smoke or agents get in." : "Members not yet in the shelter."];
+    const left = (supplyH - Math.max(0, t)) / 24;
+    const supplyLvl = left <= 0 ? "bad" : left < 30 ? "warn" : "ok";
+    m.water = [supplyLvl, left > 0 ? `Stored and purified. <b>${fmtDays(left)}</b> left.` : "Planned supply reached. Resupply or a longer-stay build needed."];
+    m.food = [supplyLvl, left > 0 ? `Long-life stores. <b>${fmtDays(left)}</b> left.` : `Planned supply reached. ${t > 8760 && S.scen !== "limited" ? "The surface is in famine, so plan for 24 to 36 months." : "Members emerge with a radiation-safe surface."}`];
+    m.power = ["ok", `Off-grid power. Steady underground temperature${coolingAt(t) > 0.5 ? `, while the surface is ${fmtN(coolingAt(t))} °C colder` : ""}.`];
+    return { m, overall: worstOf(Object.values(m).map(x => x[0])), dose };
+  }
+
+  const LABELS = { blast: "Blast", rad: "Radiation", air: "Air", water: "Water", food: "Food", power: "Power, heat" };
+  const OVERALL = {
+    home: { ok: ["t-ok", "Coping"], warn: ["t-warn", "Struggling"], bad: ["t-bad", "In danger"], dead: ["t-dead", "Likely fatal"] },
+    fortes: { ok: ["t-ok", "Protected"], warn: ["t-warn", "Protected, supplies low"], bad: ["t-bad", "Resupply needed"], dead: ["t-dead", "At risk"] },
+  };
+  function board(el, title, st, kind) {
+    const [cls, label] = OVERALL[kind][st.overall];
+    el.innerHTML = `<h3>${title}</h3><div class="overall ${cls}">${label}</div>` +
+      Object.entries(st.m).map(([k, [lvl, txt]]) => `<div class="metric"><div class="k"><span class="dot s-${lvl}"></span>${LABELS[k]}</div><div class="v">${txt}</div></div>`).join("");
+  }
+
+  function events(e) {
+    const sc = SCEN[S.scen], lc = LOC[S.loc], home = HOME[S.home].days;
+    const ev = [
+      [-336, "War breaks out", "Missile and drone strikes hit power stations, fuel depots, rail hubs and water treatment."],
+      [-330, "Rolling blackouts", "Card payments, fuel pumps and mobile networks fail during outages."],
+      [-264, "Shops empty", "Supermarkets hold only days of stock. Panic buying clears the shelves in about 3 days."],
+      [-168, "Fortes members seal in", "Members are called to their shelters and the blast doors close."],
+      [-0.5, "Launch detected", "Missiles take about 30 minutes to arrive, submarine missiles 10 to 15. Most people learn too late."],
+      [0, "Detonations", lc.cityKm != null ? `A ${sc.kt} kt warhead bursts over the city, ${lc.cityKm} km from you.` : `A ${sc.baseKt} kt ground burst hits the base ${lc.baseKm} km upwind.`],
+    ];
+    if (e.blastAt < 1) ev.push([e.blastAt, "Blast wave arrives", `${fmtN(e.psi)} psi at your house, ${Math.round(e.blastAt * 3600)} seconds after the flash.`]);
+    ev.push([0.5, "Grid and water fail", "Pumping stations lose power. Taps run dry within hours. Hospitals are overwhelmed."]);
+    if (e.R1) ev.push([e.ta, "Fallout arrives", `Radioactive dust starts falling: ${fmtN(e.R1 * Math.pow(Math.max(e.ta, 1), -1.2))} rem/h outside.`]);
+    ev.push([49, "H+49", "Fallout radiation is now about 1/100 of its H+1 level (the 7–10 rule)."]);
+    ev.push([home * 24, "Family's water runs out", "Someone must go outside, through fallout, to find water."]);
+    ev.push([336, "Day 14", "Fallout has decayed about 1,000-fold. Most survivors now face hunger, thirst and cold."]);
+    ev.push([(home + 4) * 24, "Family's food runs out", "No shops, no deliveries, no aid in the area."]);
+    ev.push([720, "Month 1", "Smoke from burning cities spreads around the hemisphere. Sunlight dims."]);
+    ev.push([2190, "Month 3", "Disease spreads without clean water or sanitation."]);
+    ev.push([4380, "Month 6", `First failed harvest. The world is about ${fmtN(coolingAt(4380))} °C colder than normal.`]);
+    ev.push([S.supply * 730, "Fortes supplies reach plan", `${S.supply} months of food, water and power used as planned.`]);
+    ev.push([17520, "Year 2", sc.famine]);
+    ev.push([26280, "Year 3", S.scen === "global" ? "Global food calories reach their lowest point, about 90% below normal." : "Recovery is slow. Food remains scarce and expensive."]);
+    return ev.sort((a, b) => a[0] - b[0]);
+  }
+
+  // ================= scene =================
+  const cv = document.getElementById("scene"), ctx = cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const rnd = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+  const skyline = Array.from({ length: 26 }, (_, i) => ({ w: 0.012 + rnd(i) * 0.016, h: 0.08 + rnd(i + 50) * 0.22 }));
+  let particles = [];
+
+  function mix(a, b, k) {
+    const pa = a.match(/\w\w/g).map(h => parseInt(h, 16)), pb = b.match(/\w\w/g).map(h => parseInt(h, 16));
+    return "rgb(" + pa.map((v, i) => Math.round(v + (pb[i] - v) * k)).join(",") + ")";
+  }
+
+  function draw(now) {
+    const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const t = tFromSlider(S.slider), e = local(), home = homeState(t, e);
+    const gY = H * 0.4, depthY = m => gY + (m / 110) * (H - gY - 10);
+    const narrow = W < 560;
+    const font = (s, w = 600) => `${w} ${s}px 'JetBrains Mono', monospace`;
+
+    // sky: soot darkens it after the strikes; winter greys it out
+    const soot = t > 0 ? Math.min(1, t / 720) * Math.min(1, SCEN[S.scen].cool / 6) : 0;
+    const top = mix("0b1020", "2a2522", soot), bot = mix("1d2747", "4a3c33", soot);
+    const g = ctx.createLinearGradient(0, 0, 0, gY); g.addColorStop(0, top); g.addColorStop(1, bot);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, gY);
+
+    // city skyline (target), shrinks after detonation when the city is hit
+    const cityX0 = W * 0.64, cityX1 = W * 0.99;
+    const cityHit = t >= 0 && (LOC[S.loc].cityKm != null || S.scen !== "limited");
+    const destroyed = cityHit ? Math.min(1, t * 60 / 0.3) : 0;
+    let x = cityX0;
+    skyline.forEach((b, i) => {
+      if (x > cityX1) return;
+      const bw = b.w * W, bh = b.h * gY * (1 - destroyed * (0.55 + rnd(i + 9) * 0.4));
+      ctx.fillStyle = cityHit ? "#1a1a22" : "#232c4a"; ctx.fillRect(x, gY - bh, bw - 2, bh);
+      if (!cityHit && rnd(i + 3) > 0.4) { ctx.fillStyle = "rgba(245,165,36,.35)"; ctx.fillRect(x + 3, gY - bh + 6, 2, 2); }
+      x += bw;
+    });
+    ctx.fillStyle = "#8f97ad"; ctx.font = font(10); ctx.textAlign = "right";
+    ctx.fillText(LOC[S.loc].cityKm != null ? "TARGET CITY" : "TARGET BASE", W - 6, gY - gY * 0.36);
+    ctx.textAlign = "left";
+
+    // conventional bombing: missiles and impacts in the city
+    if (t < -0.5 && !reduce) {
+      const ph = now / 1000;
+      for (let i = 0; i < 3; i++) {
+        const cyc = (ph * 0.5 + i / 3) % 1, tx = cityX0 + (0.15 + rnd(i + Math.floor(ph * 0.5 + i / 3) * 7) * 0.7) * (cityX1 - cityX0);
+        if (cyc < 0.6) {
+          const k = cyc / 0.6, sx = tx + 160 * (1 - k), sy = -10 + (gY + 10) * k;
+          ctx.strokeStyle = "rgba(243,240,234,.8)"; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(sx + 30, sy - 18); ctx.lineTo(sx, sy); ctx.stroke();
+        } else {
+          const k = (cyc - 0.6) / 0.4;
+          ctx.fillStyle = `rgba(245,140,36,${0.8 * (1 - k)})`; ctx.beginPath(); ctx.arc(tx, gY - 4, 4 + k * 18, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    }
+    // incoming warheads in the last 30 minutes
+    if (t >= -0.5 && t < 0) {
+      const k = (t + 0.5) / 0.5;
+      ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(W * 0.83 - 20, gY * k - 40); ctx.lineTo(W * 0.83, gY * k); ctx.stroke();
+    }
+    // nuclear fireball and mushroom cloud
+    if (t >= 0) {
+      const mins = t * 60, cx = W * 0.82;
+      const rise = Math.min(1, mins / 10), fade = t > 6 ? Math.max(0, 1 - (t - 6) / 42) : 1;
+      if (fade > 0) {
+        const topY = gY - rise * gY * 0.85, capR = (narrow ? 34 : 54) * (0.5 + 0.5 * rise);
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = "#6b5a4e"; ctx.fillRect(cx - 7, topY, 14, gY - topY);
+        const cg = ctx.createRadialGradient(cx, topY, 4, cx, topY, capR);
+        cg.addColorStop(0, mins < 1 ? "#fff3c4" : "#f5a524"); cg.addColorStop(0.5, "#c2410c"); cg.addColorStop(1, "rgba(80,60,50,0.9)");
+        ctx.fillStyle = cg; ctx.beginPath(); ctx.ellipse(cx, topY, capR * 1.5, capR * 0.75, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      // smoke layer spreading
+      if (t > 1) { ctx.fillStyle = `rgba(60,50,45,${0.5 * soot})`; ctx.fillRect(0, gY * 0.05, W, gY * 0.25); }
+      const flash = Math.max(0, 1 - mins * 4);
+      if (flash > 0) { ctx.fillStyle = `rgba(255,250,235,${flash})`; ctx.fillRect(0, 0, W, H); }
+    }
+
+    // fallout particles and snow (ambient)
+    const rate = e.R1 && t > e.ta ? e.R1 * Math.pow(Math.max(t, 1), -1.2) : 0;
+    const want = Math.min(160, Math.round(Math.log10(1 + rate) * 40)) + (coolingAt(t) > 3 && t > 4380 ? 60 : 0);
+    while (particles.length < want) particles.push({ x: Math.random() * W, y: Math.random() * gY, v: 0.3 + Math.random() * 0.6, snow: particles.length >= want - (coolingAt(t) > 3 && t > 4380 ? 60 : 0) });
+    particles.length = Math.min(particles.length, want);
+    particles.forEach(p => {
+      if (!reduce) { p.y += p.v; p.x += 0.3; if (p.y > gY) { p.y = 0; p.x = Math.random() * W; } if (p.x > W) p.x = 0; }
+      ctx.fillStyle = p.snow ? "rgba(243,240,234,.8)" : "rgba(180,140,255,.75)";
+      ctx.fillRect(p.x, p.y, p.snow ? 2 : 1.6, p.snow ? 2 : 1.6);
+    });
+
+    // ground and strata
+    const layers = [[0, 2, "#3a2c22"], [2, 15, "#2b241f"], [15, 45, "#22252e"], [45, 110, "#1b1e27"]];
+    layers.forEach(([a, b, c]) => { ctx.fillStyle = c; ctx.fillRect(0, depthY(a), W, depthY(b) - depthY(a) + 1); });
+    ctx.fillStyle = "#4a3a2c"; ctx.fillRect(0, gY - 2, W, 3);
+    ctx.font = font(9, 400); ctx.fillStyle = "rgba(143,151,173,.7)";
+    ctx.textAlign = "right"; ctx.fillText("CLAY", W - 6, depthY(9)); ctx.fillText("ROCK", W - 6, depthY(24)); ctx.textAlign = "left";
+    // depth ruler
+    for (let d = 0; d <= 100; d += 10) {
+      const y = depthY(d), key = DEPTHS.includes(d);
+      ctx.strokeStyle = key ? "#ef4444" : "rgba(143,151,173,.35)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(key ? 22 : 12, y); ctx.stroke();
+      if (d > 0 && (key || (!narrow && d % 20 === 0))) { ctx.fillStyle = key ? "#f3f0ea" : "#8f97ad"; ctx.font = font(10, key ? 600 : 400); ctx.fillText(d + " m", 26, y + 4); }
+    }
+
+    // the family's house
+    const hx = Math.max(78, W * 0.14), hw = narrow ? 44 : 64, hh = narrow ? 30 : 40;
+    const collapsed = t >= e.blastAt && e.psi >= 8, damaged = t >= e.blastAt && e.psi >= 4;
+    ctx.fillStyle = "#3a4466";
+    if (collapsed) { ctx.beginPath(); ctx.moveTo(hx, gY); ctx.lineTo(hx + hw * 0.3, gY - hh * 0.35); ctx.lineTo(hx + hw * 0.7, gY - hh * 0.2); ctx.lineTo(hx + hw, gY); ctx.fill(); }
+    else {
+      ctx.fillRect(hx, gY - hh, hw, hh);
+      if (!damaged) { ctx.beginPath(); ctx.moveTo(hx - 6, gY - hh); ctx.lineTo(hx + hw / 2, gY - hh - hh * 0.6); ctx.lineTo(hx + hw + 6, gY - hh); ctx.fill(); }
+      const lit = t < 0 && Math.floor(now / 1500) % 3 !== 0;
+      ctx.fillStyle = t >= e.blastAt && e.psi >= 1 ? "#0b1020" : lit ? "rgba(245,165,36,.8)" : "#141a2e";
+      ctx.fillRect(hx + hw * 0.18, gY - hh * 0.7, hw * 0.22, hh * 0.3); ctx.fillRect(hx + hw * 0.6, gY - hh * 0.7, hw * 0.22, hh * 0.3);
+    }
+    if (t >= e.blastAt && e.th >= 10 && t < 72) { ctx.fillStyle = "rgba(239,68,68,.55)"; ctx.beginPath(); ctx.ellipse(hx + hw / 2, gY - hh * 0.6, hw * 0.6, hh * 0.7, 0, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = "#f3f0ea"; ctx.font = font(10); ctx.fillText("THE FAMILY", hx - 4, gY + 14);
+    const hl = home.overall, hcol = { ok: "#3ecf8e", warn: "#e8d36a", bad: "#f5a524", dead: "#ef4444" }[hl];
+    ctx.fillStyle = hcol; ctx.fillRect(hx - 4, gY + 20, 8, 8);
+    ctx.fillStyle = "#8f97ad"; ctx.font = font(9, 400); ctx.fillText(OVERALL.home[hl][1].toUpperCase(), hx + 8, gY + 28);
+
+    // Fortes entrance, air intake and shaft
+    const fx = narrow ? W * 0.5 : W * 0.4;
+    ctx.fillStyle = "#2a3350"; ctx.fillRect(fx - 14, gY - 12, 28, 12);
+    ctx.fillStyle = "#ef4444"; ctx.fillRect(fx - 14, gY - 14, 28, 3);
+    const by = depthY(S.depth), bw = narrow ? W * 0.5 : W * 0.3, bh = Math.max(26, (H - gY) * 0.12);
+    ctx.fillStyle = "#111727"; ctx.fillRect(fx - 4, gY, 8, by - gY - bh / 2);
+    // air intake with filter
+    const ax = fx + 34;
+    ctx.fillStyle = "#2a3350"; ctx.fillRect(ax - 3, gY - 18, 6, 18 + (by - gY) - bh / 2);
+    ctx.fillStyle = "#3ecf8e"; ctx.fillRect(ax - 7, gY - 22, 14, 6);
+    if (!reduce && t >= -168) {
+      const len = by - gY - bh / 2 + 18;
+      for (let i = 0; i < 5; i++) { const k = ((now / 2200) + i / 5) % 1; ctx.fillStyle = "rgba(62,207,142,.9)"; ctx.fillRect(ax - 1, gY - 18 + k * len, 2, 4); }
+    }
+    ctx.fillStyle = "#8f97ad"; ctx.font = font(9, 400); ctx.fillText("NBC AIR", ax + 10, gY - 14);
+
+    // the shelter
+    const bx = fx - bw * 0.35;
+    ctx.fillStyle = "#161d33"; ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx, by - bh / 2, bw, bh, bh / 2) : ctx.rect(bx, by - bh / 2, bw, bh); ctx.fill(); ctx.stroke();
+    const lightOn = t >= -168;
+    ctx.fillStyle = lightOn ? "rgba(245,200,120,.18)" : "rgba(143,151,173,.08)";
+    ctx.fillRect(bx + bh / 2, by - bh / 2 + 4, bw - bh, bh - 8);
+    ctx.fillStyle = "#f3f0ea"; ctx.font = font(narrow ? 10 : 12); ctx.textAlign = "center";
+    ctx.fillText(`FORTES · ${S.depth} M`, bx + bw / 2, by + 4);
+    ctx.textAlign = "left";
+    // supply bar under the shelter
+    const supplyLeft = Math.max(0, Math.min(1, 1 - Math.max(0, t) / (S.supply * 730)));
+    ctx.fillStyle = "#2a3350"; ctx.fillRect(bx + bh / 2, by + bh / 2 + 8, bw - bh, 4);
+    ctx.fillStyle = supplyLeft > 0.1 ? "#3ecf8e" : "#f5a524"; ctx.fillRect(bx + bh / 2, by + bh / 2 + 8, (bw - bh) * supplyLeft, 4);
+    ctx.fillStyle = "#8f97ad"; ctx.font = font(9, 400);
+    ctx.fillText(`SUPPLIES ${Math.round(supplyLeft * 100)}%`, bx + bh / 2, by + bh / 2 + 24);
+
+    // dimension line from surface to shelter
+    const dx = Math.min(bx + bw + 14, W - 12);
+    ctx.strokeStyle = "rgba(239,68,68,.7)"; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(dx, gY); ctx.lineTo(dx, by); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#f3f0ea"; ctx.font = font(10);
+    const dl = `${S.depth} m of earth`, dw = ctx.measureText(dl).width;
+    ctx.fillText(dl, dx + 6 + dw > W ? dx - dw - 6 : dx + 6, (gY + by) / 2);
+
+    ctx.fillStyle = "rgba(143,151,173,.6)"; ctx.font = font(9, 400);
+    ctx.textAlign = "right"; ctx.fillText(narrow ? "DEPTH TO SCALE" : "HORIZONTAL DISTANCES NOT TO SCALE · DEPTH TO SCALE", W - 6, H - 8); ctx.textAlign = "left";
+  }
+
+  // ================= UI =================
+  const $ = id => document.getElementById(id);
+  function chips(el, data, key, cls = "chip") {
+    el.innerHTML = "";
+    Object.entries(data).forEach(([k, v]) => {
+      const b = document.createElement("button"); b.className = cls; b.id = el.id + "-" + k;
+      b.innerHTML = `${v.name}<small>${v.sub}</small>`;
+      b.setAttribute("aria-pressed", S[key] === k);
+      b.onclick = () => { S[key] = k; el.querySelectorAll("button").forEach(c => c.setAttribute("aria-pressed", c === b)); update(); };
+      el.appendChild(b);
+    });
+  }
+  chips($("opt-scen"), SCEN, "scen");
+  chips($("opt-loc"), LOC, "loc");
+  chips($("opt-home"), HOME, "home");
+  const depthEl = $("opt-depth");
+  function setDepth(d) { S.depth = d; depthEl.querySelectorAll("button").forEach(c => c.setAttribute("aria-pressed", +c.dataset.d === d)); document.querySelectorAll(".tier").forEach(c => c.setAttribute("aria-pressed", +c.dataset.d === d)); update(); }
+  DEPTHS.forEach(d => { const b = document.createElement("button"); b.className = "chip"; b.id = "depth-" + d; b.dataset.d = d; b.innerHTML = `${d} m`; b.onclick = () => setDepth(d); depthEl.appendChild(b); });
+
+  // depth tier cards
+  const killKt = d => Math.pow(d / 18, 1 / 0.294);
+  const nearMiss = d => craterRadiusM(1000) * (d >= 100 ? 1.8 : d >= 50 ? 2.2 : 2.5);
+  $("tiers").innerHTML = DEPTHS.map(d => {
+    const kk = killKt(d);
+    return `<button class="tier" data-d="${d}" aria-pressed="false">
+      <div class="label" style="margin:0">${d === 30 ? "Family shelter" : d === 50 ? "Deep shelter" : "Strategic depth"}</div>
+      <div class="d">${d}<span>m</span></div>
+      <ul>
+        <li><span>Fallout radiation</span><b>Halved ≈ ${Math.round(d / 0.1)} times</b></li>
+        <li><span>Survives a surface burst directly overhead up to</span><b>≈ ${kk < 10 ? kk.toFixed(0) : Math.round(kk / 5) * 5} kt</b></li>
+        <li><span>1 Mt surface burst, survives beyond</span><b>≈ ${Math.round(nearMiss(d) / 10) * 10} m</b></li>
+        <li><span>Airburst over a city</span><b>Unaffected</b></li>
+        <li><span>Bunker-busting bombs</span><b>${d <= 30 ? "Within GBU-28 reach" : d <= 60 ? "Beyond GBU-28" : "Beyond GBU-57"}</b></li>
+      </ul>
+      <p>${d === 30 ? "Deeper than any basement or garden shelter. Out of reach of fallout, firestorms and blast for anything but a near-direct hit." : d === 50 ? "Below the reach of most bunker-busting bombs, with a wide margin against near misses." : "Depth of a strategic command facility. Survives what destroys almost everything else."}</p>
+    </button>`;
+  }).join("");
+  document.querySelectorAll(".tier").forEach(b => b.onclick = () => setDepth(+b.dataset.d));
+
+  $("supply").oninput = ev => { S.supply = +ev.target.value; $("supplyOut").textContent = S.supply + " months"; update(); };
+  $("time").oninput = ev => { S.slider = +ev.target.value; stop(); update(); };
+
+  let raf = null, last = 0;
+  function stop() { S.playing = false; $("play").textContent = "Play"; }
+  $("play").onclick = () => {
+    if (S.playing) return stop();
+    if (S.slider >= 1000) S.slider = 0;
+    S.playing = true; $("play").textContent = "Pause"; last = performance.now();
+  };
+
+  let lastLogKey = "";
+  function update() {
+    const t = tFromSlider(S.slider), e = local(), seg = segIndex(S.slider);
+    $("time").value = S.slider;
+    $("clock").textContent = fmtTime(t);
+    $("phase").textContent = SEGS[seg][3];
+    document.querySelectorAll("#ticks span").forEach((s, i) => s.classList.toggle("on", i === seg));
+    board($("b-home"), "Family at home", homeState(t, e), "home");
+    board($("b-fortes"), `Fortes members · ${S.depth} m`, fortesState(t, e), "fortes");
+    const ev = events(e);
+    let nowIdx = -1; ev.forEach(([et], i) => { if (et <= t) nowIdx = i; });
+    const key = S.scen + S.loc + S.home + S.supply + S.depth + nowIdx;
+    if (key !== lastLogKey) {
+      lastLogKey = key;
+      $("log").innerHTML = ev.map(([et, h, txt], i) => `<li class="${i <= nowIdx ? "past" : ""} ${i === nowIdx ? "now" : ""}"><b>${fmtTime(et)} · ${h}</b>${txt}</li>`).join("");
+      const cur = $("log").querySelector(".now"); if (cur) $("log").scrollTop = Math.max(0, cur.offsetTop - $("log").offsetTop - 60);
+    }
+  }
+
+  function frame(now) {
+    if (S.playing) {
+      const dt = Math.min(100, now - last); last = now;
+      const speed = segIndex(S.slider) === 1 ? 14 : 34; // slow down around the strike
+      S.slider = Math.min(1000, S.slider + dt / 1000 * speed);
+      if (S.slider >= 1000) stop();
+      update();
+    }
+    draw(now);
+    raf = requestAnimationFrame(frame);
+  }
+  setDepth(50);
+  S.slider = 0; update();
+  raf = requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
