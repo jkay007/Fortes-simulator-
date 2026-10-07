@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fortes Readiness Quiz</title>
 <meta name="description" content="Ten quick questions. Find out how ready your household is for a war, a long blackout or a pandemic, where you are weakest, and which Fortes shelter fits.">
+<meta property="og:title" content="Fortes Readiness Quiz">
+<meta property="og:description" content="Ten quick questions. Find out how ready your household is for a war, a long blackout or a pandemic, where you are weakest, and which Fortes shelter fits.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -153,13 +158,19 @@ h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase;
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 .actions > * { display: inline-flex; align-items: center; }
 .actions .btn { width: auto; font-size: 15px; padding: 13px 16px; text-decoration: none; }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
 </style>
 
 <div class="frame">
   <span class="br-bl"></span><span class="br-br"></span>
   <div class="top">
     <div class="eyebrow">Readiness quiz</div>
-    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+    <a class="site" href="../index.html">← ALL FORTES TOOLS</a>
   </div>
   <h1>How ready <em>are you?</em></h1>
   <p class="lede">Ten quick questions about where you live, what you have stored and what your plan is. Get a readiness score, your weakest areas, and the shelter that fits your household. Nothing you answer leaves this page.</p>
@@ -195,11 +206,14 @@ h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase;
     <div class="rec" id="rec"></div>
     <div class="actions">
       <a class="btn" href="https://fortesbunkers.com" target="_blank" rel="noopener">Book a consultation</a>
-      <a class="ghost" href="../shelter-sizer/" style="text-decoration:none">Size it in detail</a>
+      <a class="ghost" href="../shelter-sizer/index.html" style="text-decoration:none">Size it in detail</a>
       <button class="ghost" id="share">Copy my result</button>
       <button class="ghost" id="again">Take it again</button>
     </div>
   </section>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="../index.html">Home</a><a href="../ww3-simulator/index.html">WW3</a><a href="../nuclear-simulator/index.html">Nuclear</a><a href="../blast-simulator/index.html">Blast</a><a href="../threat-simulator/index.html">Threats</a><a href="../shelter-walkthrough/index.html">Walkthrough</a><a href="../depth-explained/index.html">Depth</a><a href="../air-power-simulator/index.html">Air and power</a><a href="../shelter-sizer/index.html">Sizer</a><a href="../supplies-calculator/index.html">Supplies</a><a href="../readiness-quiz/index.html" aria-current="page">Quiz</a><a href="../location-checker/index.html">Location</a></nav>
 
   <div class="cta">
     <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
@@ -226,13 +240,13 @@ h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase;
   ];
   const AREAS = { water: "Water", food: "Food", power: "Power", shelter: "Shelter", time: "Time", health: "Health", plan: "Plan" };
   const STEPS = {
-    water: ["Store water", "Aim for at least 2 weeks: about 4 litres per person per day, in sealed containers.", "../supplies-calculator/", "Supplies calculator"],
-    food: ["Build a food store", "Long-life food your household actually eats, rotated before it expires.", "../supplies-calculator/", "Supplies calculator"],
-    power: ["Plan for no power", "Light, cooking, a radio and a way to keep phones charged for weeks.", "../air-power-simulator/", "Air and power simulator"],
-    shelter: ["Know where you would shelter", "A house cuts fallout radiation only about 3 times. Deep earth cuts it more than 100,000 times.", "../shelter-walkthrough/", "Shelter walkthrough"],
-    time: ["Cut the time to shelter", "A shelter you can reach in under 15 minutes is the only one that helps in a missile attack.", "../location-checker/", "Location checker"],
-    health: ["Cover medical needs", "A good first aid kit, someone trained, and a longer supply of any prescription medicines.", "../supplies-calculator/", "Supplies calculator"],
-    plan: ["Write the plan down", "Where you meet, who collects whom, and how you get news when phones are down.", "../threat-simulator/", "Threat simulator"],
+    water: ["Store water", "Aim for at least 2 weeks: about 4 litres per person per day, in sealed containers.", "../supplies-calculator/index.html", "Supplies calculator"],
+    food: ["Build a food store", "Long-life food your household actually eats, rotated before it expires.", "../supplies-calculator/index.html", "Supplies calculator"],
+    power: ["Plan for no power", "Light, cooking, a radio and a way to keep phones charged for weeks.", "../air-power-simulator/index.html", "Air and power simulator"],
+    shelter: ["Know where you would shelter", "A house cuts fallout radiation only about 3 times. Deep earth cuts it more than 100,000 times.", "../shelter-walkthrough/index.html", "Shelter walkthrough"],
+    time: ["Cut the time to shelter", "A shelter you can reach in under 15 minutes is the only one that helps in a missile attack.", "../location-checker/index.html", "Location checker"],
+    health: ["Cover medical needs", "A good first aid kit, someone trained, and a longer supply of any prescription medicines.", "../supplies-calculator/index.html", "Supplies calculator"],
+    plan: ["Write the plan down", "Where you meet, who collects whom, and how you get news when phones are down.", "../threat-simulator/index.html", "Threat simulator"],
   };
   const DEPTH = [100, 50, 100, 50, 30], DEPTH_WHY = ["You live in a likely target area", "A city is close by", "A military or industrial target is close", "Targets are some distance away", "You are far from likely targets"];
   let i = 0, ans = new Array(QS.length).fill(null);

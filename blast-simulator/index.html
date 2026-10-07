@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fortes Blast Simulator</title>
 <meta name="description" content="Pick a threat, set how far you are from ground zero, and compare three places you could be when it lands: in the open, in a brick house, or below ground in a Fortes shelter.">
+<meta property="og:title" content="Fortes Blast Simulator">
+<meta property="og:description" content="Pick a threat, set how far you are from ground zero, and compare three places you could be when it lands: in the open, in a brick house, or below ground in a Fortes shelter.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -115,13 +120,19 @@ h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase;
 .cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
 .fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
 </style>
 
 <div class="frame">
   <span class="br-bl"></span><span class="br-br"></span>
   <div class="top">
     <div class="eyebrow">Blast simulator</div>
-    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+    <a class="site" href="../index.html">← ALL FORTES TOOLS</a>
   </div>
   <h1>How far is <em>far enough?</em></h1>
   <p class="lede">Pick a threat, set how far you are from ground zero, and compare three places you could be when it lands: out in the open, inside a brick house, or below ground in a Fortes shelter.</p>
@@ -175,6 +186,9 @@ h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase;
 
   <h2>What happens, in order</h2>
   <div class="timeline" id="timeline"></div>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="../index.html">Home</a><a href="../ww3-simulator/index.html">WW3</a><a href="../nuclear-simulator/index.html">Nuclear</a><a href="../blast-simulator/index.html" aria-current="page">Blast</a><a href="../threat-simulator/index.html">Threats</a><a href="../shelter-walkthrough/index.html">Walkthrough</a><a href="../depth-explained/index.html">Depth</a><a href="../air-power-simulator/index.html">Air and power</a><a href="../shelter-sizer/index.html">Sizer</a><a href="../supplies-calculator/index.html">Supplies</a><a href="../readiness-quiz/index.html">Quiz</a><a href="../location-checker/index.html">Location</a></nav>
 
   <div class="cta">
     <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>

@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fortes Location Checker</title>
 <meta name="description" content="Pick your town and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits.">
+<meta property="og:title" content="Fortes Location Checker">
+<meta property="og:description" content="Pick your town and see the nearest likely targets, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -140,13 +145,19 @@ canvas#map { cursor: crosshair; aspect-ratio: 1 / 1; max-height: 640px; }
 .tbl td:first-child { color: var(--cream); }
 .tbl td.n { font-family: var(--f-mono); text-align: right; white-space: nowrap; color: var(--cream); font-variant-numeric: tabular-nums; }
 .scroll { overflow-x: auto; }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
 </style>
 
 <div class="frame">
   <span class="br-bl"></span><span class="br-br"></span>
   <div class="top">
     <div class="eyebrow">Location checker</div>
-    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+    <a class="site" href="../index.html">← ALL FORTES TOOLS</a>
   </div>
   <h1>Is where you live <em>safe enough?</em></h1>
   <p class="lede">Pick your town. See the nearest likely targets in a war, how often the wind would carry fallout to you, how long you would have to get underground, and which Fortes shelter depth fits your location.</p>
@@ -218,6 +229,9 @@ canvas#map { cursor: crosshair; aspect-ratio: 1 / 1; max-height: 640px; }
 
   <h2>Targets within reach</h2>
   <div class="scroll"><table class="tbl" id="targets"></table></div>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="../index.html">Home</a><a href="../ww3-simulator/index.html">WW3</a><a href="../nuclear-simulator/index.html">Nuclear</a><a href="../blast-simulator/index.html">Blast</a><a href="../threat-simulator/index.html">Threats</a><a href="../shelter-walkthrough/index.html">Walkthrough</a><a href="../depth-explained/index.html">Depth</a><a href="../air-power-simulator/index.html">Air and power</a><a href="../shelter-sizer/index.html">Sizer</a><a href="../supplies-calculator/index.html">Supplies</a><a href="../readiness-quiz/index.html">Quiz</a><a href="../location-checker/index.html" aria-current="page">Location</a></nav>
 
   <div class="cta">
     <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>

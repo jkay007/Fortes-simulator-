@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fortes Shelter Walkthrough</title>
 <meta name="description" content="A clickable cutaway of a Fortes underground shelter at 30, 50 or 100 metres. Open each room, follow the air, water and power systems, and test the depth against a direct hit.">
+<meta property="og:title" content="Fortes Shelter Walkthrough">
+<meta property="og:description" content="A clickable cutaway of a Fortes underground shelter at 30, 50 or 100 metres. Open each room, follow the air, water and power systems, and test the depth against a direct hit.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -155,13 +160,19 @@ h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase;
 .tbl td:first-child { font-family: var(--f-body); color: var(--muted); }
 .tbl tr.on td { background: color-mix(in srgb, var(--red) 8%, transparent); }
 .scroll { overflow-x: auto; }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
 </style>
 
 <div class="frame">
   <span class="br-bl"></span><span class="br-br"></span>
   <div class="top">
     <div class="eyebrow">Shelter walkthrough</div>
-    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+    <a class="site" href="../index.html">← ALL FORTES TOOLS</a>
   </div>
   <h1>Step inside. <em>Go down.</em></h1>
   <p class="lede">A cutaway of a Fortes shelter. Pick a depth, open any room, and switch on the air, water and power systems to see how the shelter keeps people alive while it is sealed.</p>
@@ -204,6 +215,9 @@ h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase;
 
   <h2>Three depths compared</h2>
   <div class="scroll"><table class="tbl" id="depthTable"></table></div>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="../index.html">Home</a><a href="../ww3-simulator/index.html">WW3</a><a href="../nuclear-simulator/index.html">Nuclear</a><a href="../blast-simulator/index.html">Blast</a><a href="../threat-simulator/index.html">Threats</a><a href="../shelter-walkthrough/index.html" aria-current="page">Walkthrough</a><a href="../depth-explained/index.html">Depth</a><a href="../air-power-simulator/index.html">Air and power</a><a href="../shelter-sizer/index.html">Sizer</a><a href="../supplies-calculator/index.html">Supplies</a><a href="../readiness-quiz/index.html">Quiz</a><a href="../location-checker/index.html">Location</a></nav>
 
   <div class="cta">
     <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>

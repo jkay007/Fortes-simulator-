@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fortes Depth Explained</title>
 <meta name="description" content="Why Fortes builds at 30, 50 and 100 metres. See how deep each weapon's damage reaches, what each depth survives, and how earth stops fallout radiation.">
+<meta property="og:title" content="Fortes Depth Explained">
+<meta property="og:description" content="Why Fortes builds at 30, 50 and 100 metres. See how deep each weapon's damage reaches, what each depth survives, and how earth stops fallout radiation.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -134,13 +139,19 @@ canvas#chart { width: 100%; height: 420px; display: block; background: #0b1020; 
 .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
 @media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
 .two p { color: var(--muted); margin: 0 0 12px; }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
 </style>
 
 <div class="frame">
   <span class="br-bl"></span><span class="br-br"></span>
   <div class="top">
     <div class="eyebrow">Depth explained</div>
-    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+    <a class="site" href="../index.html">← ALL FORTES TOOLS</a>
   </div>
   <h1>Why 30, 50 <em>and 100 metres?</em></h1>
   <p class="lede">A shelter's depth decides two things: whether it survives a warhead landing directly on top of it, and how much fallout radiation reaches the people inside. Pick a weapon to see how deep its damage reaches.</p>
@@ -190,6 +201,9 @@ canvas#chart { width: 100%; height: 420px; display: block; background: #0b1020; 
     </div>
     <div class="scroll"><table class="ladder" id="ladder"></table></div>
   </div>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="../index.html">Home</a><a href="../ww3-simulator/index.html">WW3</a><a href="../nuclear-simulator/index.html">Nuclear</a><a href="../blast-simulator/index.html">Blast</a><a href="../threat-simulator/index.html">Threats</a><a href="../shelter-walkthrough/index.html">Walkthrough</a><a href="../depth-explained/index.html" aria-current="page">Depth</a><a href="../air-power-simulator/index.html">Air and power</a><a href="../shelter-sizer/index.html">Sizer</a><a href="../supplies-calculator/index.html">Supplies</a><a href="../readiness-quiz/index.html">Quiz</a><a href="../location-checker/index.html">Location</a></nav>
 
   <div class="cta">
     <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>

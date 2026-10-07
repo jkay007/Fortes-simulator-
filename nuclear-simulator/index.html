@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fortes Nuclear Simulator</title>
 <meta name="description" content="Set the weapon, the wind and where you are. See the blast rings, the fallout plume and the radiation dose in the open, in a house, or sealed in a Fortes shelter.">
+<meta property="og:title" content="Fortes Nuclear Simulator">
+<meta property="og:description" content="Set the weapon, the wind and where you are. See the blast rings, the fallout plume and the radiation dose in the open, in a house, or sealed in a Fortes shelter.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -106,13 +111,19 @@ h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase;
 .cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
 .cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
 .fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
 </style>
 
 <div class="frame">
   <span class="br-bl"></span><span class="br-br"></span>
   <div class="top">
     <div class="eyebrow">Nuclear simulator</div>
-    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+    <a class="site" href="../index.html">← ALL FORTES TOOLS</a>
   </div>
   <h1>The blast is minutes. <em>Fallout is weeks.</em></h1>
   <p class="lede">Set the weapon, the wind and where you are. See the blast rings, the fallout plume drifting downwind, and the radiation dose you would take over the next two weeks in the open, in a house, or sealed in a Fortes shelter.</p>
@@ -191,6 +202,9 @@ h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase;
   <h2>Checked against real events</h2>
   <div class="tablewrap"><table class="ladder check" id="check"></table></div>
   <p class="note">Every figure in the "This model" column is calculated live by the same code that drives the simulator above. Sources: <a href="https://atomicarchive.com/resources/documents/effects/ota/chapter-2-2-2.html" target="_blank" rel="noopener">OTA, The Effects of Nuclear War (1979)</a>; <a href="https://www.abomb1.org/nukeffct/airburst.html" target="_blank" rel="noopener">Glasstone &amp; Dolan, The Effects of Nuclear Weapons</a>; US Strategic Bombing Survey (1946); Castle Bravo fallout survey as reported by Glasstone (1957).</p>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="../index.html">Home</a><a href="../ww3-simulator/index.html">WW3</a><a href="../nuclear-simulator/index.html" aria-current="page">Nuclear</a><a href="../blast-simulator/index.html">Blast</a><a href="../threat-simulator/index.html">Threats</a><a href="../shelter-walkthrough/index.html">Walkthrough</a><a href="../depth-explained/index.html">Depth</a><a href="../air-power-simulator/index.html">Air and power</a><a href="../shelter-sizer/index.html">Sizer</a><a href="../supplies-calculator/index.html">Supplies</a><a href="../readiness-quiz/index.html">Quiz</a><a href="../location-checker/index.html">Location</a></nav>
 
   <div class="cta">
     <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>

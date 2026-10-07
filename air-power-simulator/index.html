@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fortes Air and Power</title>
 <meta name="description" content="Set how many people, how big the shelter and how much air, battery and fuel it has. Watch CO2, oxygen, temperature and power hour by hour while the shelter is sealed.">
+<meta property="og:title" content="Fortes Air and Power">
+<meta property="og:description" content="Set how many people, how big the shelter and how much air, battery and fuel it has. Watch CO2, oxygen, temperature and power hour by hour while the shelter is sealed.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -143,13 +148,19 @@ summary { cursor: pointer; font-family: var(--f-mono); font-size: 12px; letter-s
 .tbl td { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
 .tbl th:first-child, .tbl td:first-child { text-align: left; }
 .scroll { overflow-x: auto; }
+a.site { text-decoration: none; } a.site:hover { color: var(--cream); }
+.more { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 12px; }
+.more span { color: var(--red); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; margin-right: 4px; }
+.more a { color: var(--muted); text-decoration: none; }
+.more a:hover { color: var(--cream); }
+.more a[aria-current] { color: var(--cream); border-bottom: 1px solid var(--red); }
 </style>
 
 <div class="frame">
   <span class="br-bl"></span><span class="br-br"></span>
   <div class="top">
     <div class="eyebrow">Air and power simulator</div>
-    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+    <a class="site" href="../index.html">← ALL FORTES TOOLS</a>
   </div>
   <h1>Sealed in. <em>Still breathing?</em></h1>
   <p class="lede">A shelter is only as good as its air and its power. Set the people, the space, the filtered airflow, the battery and the fuel, then watch carbon dioxide, oxygen, temperature and energy hour by hour.</p>
@@ -233,6 +244,9 @@ summary { cursor: pointer; font-family: var(--f-mono); font-size: 12px; letter-s
     <div class="card"><h3>Heat</h3><p>Every person gives off about as much heat as an 80 W bulb, and every appliance ends up as heat too. Deep rock stays at 11 to 13 °C all year, but it soaks up heat slowly, so a crowded shelter warms up over days.</p></div>
     <div class="card fortes"><h3>The Fortes answer</h3><p>Blast valves and NBC filters bring in clean outside air and keep the shelter at slight overpressure. A battery bank runs the fans, with two generators and stored fuel to recharge it, and a hand-crank fan if everything else fails.</p></div>
   </div>
+
+  <!-- fortes-sitekit -->
+  <nav class="more" aria-label="Fortes tools"><span>Fortes tools</span><a href="../index.html">Home</a><a href="../ww3-simulator/index.html">WW3</a><a href="../nuclear-simulator/index.html">Nuclear</a><a href="../blast-simulator/index.html">Blast</a><a href="../threat-simulator/index.html">Threats</a><a href="../shelter-walkthrough/index.html">Walkthrough</a><a href="../depth-explained/index.html">Depth</a><a href="../air-power-simulator/index.html" aria-current="page">Air and power</a><a href="../shelter-sizer/index.html">Sizer</a><a href="../supplies-calculator/index.html">Supplies</a><a href="../readiness-quiz/index.html">Quiz</a><a href="../location-checker/index.html">Location</a></nav>
 
   <div class="cta">
     <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
