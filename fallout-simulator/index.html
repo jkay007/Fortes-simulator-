@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Fallout Clock</title>
+<meta name="description" content="Fallout radiation fades on a fixed schedule. Set how heavy it is and when it arrives, then run the clock to see when it is safe to come out and what a trip outside would cost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Fortes bracket frame. Chart and clock lead (they sit first on a phone); scenario controls sit left on desktop.
+   Below: step-outside and when-to-emerge cards, then the shelter comparison. One dark look, same family as the other Fortes simulators. */
+:root {
+  --ink: #0f1526; --panel: #161d33; --line: #2a3350; --cream: #f3f0ea; --muted: #8f97ad; --plot: #0b1020;
+  --red: #ef4444; --red-t: #ff6b6b; --amber: #f5a524; --yellow: #e8d36a; --green: #3ecf8e; --fall: #b48cff;
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--ink); }
+body { color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: clamp(32px, 5vw, 56px); height: clamp(32px, 5vw, 56px); border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); flex: none; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(30px, 6vw, 64px); line-height: .98; margin: 18px 0 10px; text-wrap: balance; overflow-wrap: break-word; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 66ch; margin: 0 0 26px; font-size: 16px; }
+.grid { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); grid-template-areas: "controls stage"; gap: 28px; align-items: start; }
+.stage { grid-area: stage; display: grid; gap: 16px; min-width: 0; }
+.controls { grid-area: controls; display: grid; gap: 22px; min-width: 0; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "controls"; gap: 22px; } }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--red-t); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; text-align: right; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 10px 11px; min-height: 48px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+.chip.wide { grid-column: 1 / -1; }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--red-t); outline-offset: 2px; }
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.row3 .chip { text-align: center; }
+input[type=range] { width: 100%; height: 36px; margin: 4px 0 0; accent-color: var(--red); background: transparent; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.btn { font-family: var(--f-display); text-transform: uppercase; font-size: 16px; letter-spacing: .04em; background: var(--red); color: var(--ink); border: 0; padding: 0 22px; min-height: 48px; cursor: pointer; border-radius: 2px; white-space: nowrap; }
+.btn:hover { filter: brightness(1.08); }
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+.clocktxt { color: var(--cream); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+.chartbox { min-width: 0; }
+canvas#chart { display: block; width: 100%; height: 340px; background: var(--plot); touch-action: pan-y; cursor: ew-resize; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.legend span { color: var(--muted); }
+.legend b { font-family: var(--f-mono); font-weight: 600; font-size: 12px; }
+.ln { width: 20px; height: 3px; flex: none; display: inline-block; }
+.ln.dash { height: 0; border-top: 2px dashed var(--muted); }
+.clockrow { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: end; }
+.clockctl { min-width: 0; }
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.readout > div { background: var(--ink); padding: 14px; min-width: 0; }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--red-t); }
+.readout .v { font-family: var(--f-display); font-size: clamp(20px, 2.6vw, 28px); font-variant-numeric: tabular-nums; margin-top: 4px; overflow-wrap: anywhere; line-height: 1.1; }
+.readout .v small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .04em; margin-left: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+@media (max-width: 900px) { .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; text-wrap: balance; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--red-t); font-weight: 600; }
+.verdict { font-family: var(--f-display); font-size: 28px; text-transform: uppercase; line-height: 1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.verdict small { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; padding: 5px 9px; border: 1px solid currentColor; width: fit-content; max-width: 100%; }
+.pill::before { content: ""; width: 7px; height: 7px; background: currentColor; flex: none; }
+.st-fatal { color: var(--red-t); } .st-severe { color: var(--amber); } .st-injury { color: var(--yellow); } .st-safe { color: var(--green); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li > span { color: var(--muted); min-width: 0; }
+.card li > span small { display: block; font-size: 12px; }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.card p a, .note a { color: var(--cream); }
+.ladder { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ladder th { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--red-t); text-align: left; font-weight: 600; padding: 0 8px 8px 0; vertical-align: bottom; }
+.ladder td { border-top: 1px solid var(--line); padding: 10px 8px 10px 0; font-variant-numeric: tabular-nums; vertical-align: top; }
+.ladder td:not(:first-child), .ladder th:not(:first-child) { text-align: right; font-family: var(--f-mono); }
+.ladder td:nth-child(2), .ladder td:nth-child(3) { white-space: nowrap; }
+.ladder td:last-child, .ladder th:last-child { padding-right: 0; }
+.ladder td:first-child { color: var(--cream); }
+.ladder td:first-child small { display: block; color: var(--muted); font-family: var(--f-mono); font-size: 11px; }
+.ladder tr.fortes td { background: color-mix(in srgb, var(--red) 7%, transparent); }
+.ladder tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--red); padding-left: 10px; }
+.ladder .pill { font-size: 10px; letter-spacing: .06em; padding: 4px 7px; white-space: normal; text-align: left; }
+.tablewrap { overflow-x: auto; }
+.note { font-size: 13px; color: var(--muted); margin-top: 12px; max-width: 90ch; }
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+@media (max-width: 520px) { .chip { padding: 10px 9px; } .mapwrap { padding: 10px; } .clockrow { grid-template-columns: minmax(0, 1fr); } .clockrow .btn { width: 100%; } .card { padding: 14px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Fallout clock</div>
+    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+  </div>
+  <h1>How long do you <em>stay down?</em></h1>
+  <p class="lede">Fallout radiation dies away on a fixed schedule. Set how heavy it is and when it reaches you, then run the clock. See when it is safe to open the door, and what a trip outside would cost you along the way.</p>
+
+  <div class="grid">
+    <section class="stage" aria-label="Fallout clock chart">
+      <div class="mapwrap">
+        <div class="maphead"><span id="chartTitle">Outdoor dose rate</span><span class="clocktxt" id="clockTxt"></span></div>
+        <div class="seg" role="group" aria-label="Chart view">
+          <button type="button" class="chip" id="tab-rate" data-tab="rate" aria-pressed="true">Dose rate<small>rem per hour</small></button>
+          <button type="button" class="chip" id="tab-dose" data-tab="dose" aria-pressed="false">Dose taken<small>rem since arrival</small></button>
+        </div>
+        <div class="chartbox"><canvas id="chart" role="img" aria-label="Chart"></canvas></div>
+        <div class="legend" id="legend"></div>
+        <div class="clockrow">
+          <button type="button" class="btn" id="play" aria-pressed="false">Play</button>
+          <div class="clockctl">
+            <div class="label"><span>Time since the blast</span><output id="clockOut" for="clock"></output></div>
+            <input type="range" id="clock" min="0" max="1000" step="1" aria-label="Time since the blast">
+          </div>
+        </div>
+      </div>
+      <div class="readout">
+        <div><div class="k">Outside</div><div class="v" id="r-out"></div><div class="s" id="r-out-s"></div></div>
+        <div><div class="k">Inside</div><div class="v" id="r-in"></div><div class="s" id="r-in-s"></div></div>
+        <div><div class="k">Dose in the open</div><div class="v" id="r-do"></div><div class="s" id="r-do-s"></div></div>
+        <div><div class="k">Dose in shelter</div><div class="v" id="r-di"></div><div class="s" id="r-di-s"></div></div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <div>
+        <div class="label"><span>Fallout outside at H+1</span><output id="r1Out" for="r1"></output></div>
+        <div class="chips" id="r1Chips" role="group" aria-label="Fallout intensity presets"></div>
+        <input type="range" id="r1" min="0" max="1000" step="1" aria-label="Outdoor dose rate one hour after the blast">
+        <div class="hint">The outdoor dose rate one hour after the burst. The Nuclear simulator shows this number for your position as &ldquo;Fallout at H+1&rdquo;.</div>
+      </div>
+      <div>
+        <div class="label"><span>Fallout reaches you</span><output id="taOut" for="ta"></output></div>
+        <input type="range" id="ta" min="0" max="1000" step="1" aria-label="Hours from the blast until fallout reaches you">
+        <div class="hint">Time from the blast until the first dust lands where you are. Closer to ground zero means sooner.</div>
+      </div>
+      <div>
+        <div class="label"><span>Where you wait</span></div>
+        <div class="chips" id="shChips" role="group" aria-label="Where you shelter"></div>
+        <div class="hint" id="shHint"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="card" id="trip">
+      <h3>Step outside</h3>
+      <div><div class="label"><span>Trip length</span></div><div class="row3" id="tripChips" role="group" aria-label="Trip length"></div></div>
+      <div class="verdict" id="tripV"></div>
+      <div id="tripPill"></div>
+      <ul>
+        <li><span>Leaving at</span><b id="tripAt"></b></li>
+        <li><span>Outdoor rate then</span><b id="tripRate"></b></li>
+        <li><span>Trip costs under 5 rem from<small>US annual limit for radiation workers</small></span><b id="tripUnder"></b></li>
+      </ul>
+      <p id="tripMsg"></p>
+    </div>
+    <div class="card" id="miles"></div>
+  </div>
+
+  <h2>Where you wait it out</h2>
+  <div class="tablewrap"><table class="ladder" id="cmp"></table></div>
+  <p class="note" id="cmpNote"></p>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Book a confidential consultation &rarr; <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Educational model only. Radiation falls as t<sup>-1.2</sup> after the blast (the Way&ndash;Wigner decay law behind the 7&ndash;10 rule), which holds from roughly 15 minutes to 6 months. All fallout lands at the moment it arrives; in reality it builds up over hours, and rain can concentrate it. Doses treat 1 roentgen as 1 rem. Protection factors are approximate: a ground-floor room about 3, a basement about 20, earth cover from a halving thickness of 12 cm, and Fortes capped at 100,000 to match the Nuclear simulator. Beyond a few metres of earth the limit is the entrance and the air supply, not the rock. The 5 rem trip limit is the annual limit for US radiation workers. None of this is a Fortes guarantee, and real shelters need real dosimeters. Follow local authorities in an emergency: <a href="https://www.ready.gov/nuclear-explosion" target="_blank" rel="noopener" style="color:inherit">US guidance</a> is to get inside, stay inside, and stay tuned, for at least 24 hours.</p>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // ================= model =================
+  // Outdoor dose rate after the blast: R(t) = R1 * t^-1.2, t in hours (the 7-10 rule). Integral gives dose.
+  const T_MIN = 0.25, T_MAX = 2401;                 // 15 minutes to about 100 days
+  const R_MIN = 1, R_MAX = 50000;                   // rem/h at H+1
+  const TA_MIN = 0.25, TA_MAX = 24;                 // hours until fallout arrives
+  const PF_CAP = 1e5;                               // same cap the Nuclear simulator uses
+  const earthPF = m => Math.min(PF_CAP, 2 * Math.pow(2, m / 0.12));
+  const SHELTERS = [
+    { id: "open",     name: "Out in the open",              pf: 1,           sub: "No cover" },
+    { id: "room",     name: "Ground-floor room",            pf: 3,           sub: "Brick house" },
+    { id: "basement", name: "House basement",               pf: 20,          sub: "Below ground floor" },
+    { id: "earth",    name: "Backyard shelter, 1 m of earth", pf: earthPF(1), sub: "Buried 1 m" },
+    { id: "fortes",   name: "Fortes shelter, 30 m or deeper", pf: earthPF(30), sub: "30, 50 or 100 m down", fortes: true },
+  ];
+  const PRESETS = [
+    { v: 10,    name: "Light",    sub: "10 rem/h" },
+    { v: 100,   name: "Moderate", sub: "100 rem/h" },
+    { v: 1000,  name: "Heavy",    sub: "1,000 rem/h" },
+    { v: 10000, name: "Severe",   sub: "10,000 rem/h" },
+  ];
+  const TRIPS = [{ h: 0.25, name: "15 min" }, { h: 1, name: "1 hour" }, { h: 4, name: "4 hours" }];
+  const RATE_LINES = [10, 1, 0.1];
+  const TRIP_LIMIT = 5;                             // rem
+
+  const S = { R1: 1000, ta: 1, shelter: "fortes", t: 48, trip: 1, tab: "rate", playing: false };
+  const shelter = () => SHELTERS.find(s => s.id === S.shelter);
+
+  const rateOut = t => t < S.ta ? 0 : S.R1 * Math.pow(t, -1.2);
+  const doseBetween = (a, b) => { const lo = Math.max(a, S.ta); return b <= lo ? 0 : 5 * S.R1 * (Math.pow(lo, -0.2) - Math.pow(b, -0.2)); };
+  const doseTo = t => doseBetween(0, t);
+  const tBelow = r => Math.max(S.ta, Math.pow(S.R1 / r, 1 / 1.2));
+  function tripUnder(limit, d) {                     // earliest start time at which a trip of d hours costs under `limit`
+    const f = t => doseBetween(t, t + d);
+    if (f(S.ta) <= limit) return S.ta;
+    if (f(T_MAX) > limit) return Infinity;
+    let lo = S.ta, hi = T_MAX;
+    for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; f(m) > limit ? lo = m : hi = m; }
+    return hi;
+  }
+
+  // ================= formatting =================
+  const SUP = { "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
+  const sci = (v, html) => { const [m, e] = v.toExponential(0).split("e"); const ex = String(parseInt(e, 10)); return html ? m + "×10<sup>" + ex.replace("-", "−") + "</sup>" : m + "×10" + ex.split("").map(c => SUP[c]).join(""); };
+  const fmtN = v => !(v > 0) ? "0" : v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1000 ? Math.round(v).toLocaleString("en-GB") : v >= 10 ? String(Math.round(v)) : v >= 1 ? v.toFixed(1) : v >= 0.01 ? v.toFixed(2) : "<0.01";
+  const fmtRate = (v, html) => !(v > 0) ? "0" : v >= 0.01 ? fmtN(v) : sci(v, html);
+  const fmtH = h => {
+    if (!isFinite(h)) return "over 100 days";
+    if (h * 60 < 59.5) return Math.max(1, Math.round(h * 60)) + " min";
+    if (h < 48) return (h < 9.95 ? h.toFixed(1) : String(Math.round(h))) + " h";
+    if (h < 1440) { const d = h / 24; return (d < 9.95 ? d.toFixed(1) : String(Math.round(d))) + " days"; }
+    return (h / 720).toFixed(1) + " months";
+  };
+  const fmtPF = pf => pf >= PF_CAP ? "100,000+" : pf >= 1000 ? Math.round(pf).toLocaleString("en-GB") : String(Math.round(pf));
+  const LV = { fatal: ["Likely fatal", "st-fatal"], severe: ["Severe harm", "st-severe"], injury: ["Harm likely", "st-injury"], safe: ["Low risk", "st-safe"] };
+  const doseLevel = d => d >= 600 ? "fatal" : d >= 200 ? "severe" : d >= 50 ? "injury" : "safe";
+  const pill = d => { const [label, cls] = LV[doseLevel(d)]; return `<span class="pill ${cls}">${label}</span>`; };
+  const pillInto = (el, d) => { el.innerHTML = pill(d); };
+
+  // ================= slider mappings (log) =================
+  const logTo = (v, a, b) => Math.round(1000 * Math.log(v / a) / Math.log(b / a));
+  const logFrom = (s, a, b) => a * Math.pow(b / a, s / 1000);
+
+  // ================= canvas chart =================
+  const C = { grid: "#222b45", axis: "#8f97ad", out: "#b48cff", inn: "#3ecf8e", now: "#f3f0ea", plot: "#0b1020", red: "#ff6b6b", amber: "#f5a524", yellow: "#e8d36a" };
+  const cv = $("chart"), ctx = cv.getContext("2d");
+  let W = 0, H = 0, dpr = 1, L = { padL: 50, pw: 100 };
+  const X_TICKS = [[0.25, "15 min", "15m"], [1, "1 h", "1h"], [7, "7 h", "7h"], [49, "2 d", "2d"], [343, "2 wk", "2w"], [2401, "3 mo", "3mo"]];
+
+  function resize() {
+    const w = Math.floor(cv.parentElement.clientWidth);
+    if (!w) return;
+    const h = Math.round(Math.max(260, Math.min(430, w * 0.62)));
+    const d = Math.min(window.devicePixelRatio || 1, 3);
+    if (w === W && h === H && d === dpr) return;
+    W = w; H = h; dpr = d;
+    cv.style.height = H + "px";
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    draw();
+  }
+
+  function label(text, x, y, color, align, base, size) {
+    ctx.font = `600 ${size}px "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace`;
+    ctx.textAlign = align; ctx.textBaseline = base;
+    ctx.lineWidth = 4; ctx.strokeStyle = C.plot; ctx.lineJoin = "round"; ctx.strokeText(text, x, y);
+    ctx.fillStyle = color; ctx.fillText(text, x, y);
+  }
+
+  function draw() {
+    if (!W) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = C.plot; ctx.fillRect(0, 0, W, H);
+    const small = W < 520, fs = small ? 10 : 11;
+    const padL = small ? 48 : 56, padR = small ? 14 : 18, padT = 14, padB = small ? 28 : 32;
+    const pw = W - padL - padR, ph = H - padT - padB;
+    L = { padL, pw };
+    const rate = S.tab === "rate";
+    const yMin = rate ? -5 : -4, yMax = 5;
+    const xL = Math.log10(T_MIN), xH = Math.log10(T_MAX);
+    const X = t => padL + (Math.log10(t) - xL) / (xH - xL) * pw;
+    const Y = v => padT + (1 - (Math.log10(Math.max(v, 1e-12)) - yMin) / (yMax - yMin)) * ph;
+
+    // grid and axes
+    ctx.lineWidth = 1; ctx.strokeStyle = C.grid;
+    const step = ph / (yMax - yMin) < 22 ? 2 : 1;
+    for (let e = yMin; e <= yMax; e++) {
+      const y = Math.round(Y(Math.pow(10, e))) + 0.5;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+      if ((e - yMin) % step === 0) {
+        const t = e >= 3 ? ["1k", "10k", "100k"][e - 3] : e >= -2 ? String(Math.pow(10, e)) : "10" + String(e).split("").map(c => SUP[c]).join("");
+        ctx.font = `400 ${fs}px "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace`;
+        ctx.fillStyle = C.axis; ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(t, padL - 6, y);
+      }
+    }
+    X_TICKS.forEach(([t, longName, shortName], i) => {
+      const name = small ? shortName : longName;
+      const x = Math.round(X(t)) + 0.5;
+      ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
+      const last = i === X_TICKS.length - 1, first = i === 0;
+      ctx.font = `400 ${fs}px "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace`;
+      ctx.fillStyle = C.axis; ctx.textAlign = last ? "right" : first ? "left" : "center"; ctx.textBaseline = "top";
+      ctx.fillText(name, last ? x + 4 : first ? x - 2 : x, padT + ph + 8);
+    });
+    ctx.save(); ctx.translate(10, padT + ph / 2); ctx.rotate(-Math.PI / 2);
+    ctx.font = `400 ${fs}px "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace`;
+    ctx.fillStyle = C.axis; ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.fillText(rate ? "rem per hour" : "rem taken", 0, -8); ctx.restore();
+
+    ctx.save();
+    ctx.beginPath(); ctx.rect(padL, padT, pw, ph); ctx.clip();
+
+    // thresholds
+    const lines = rate
+      ? RATE_LINES.map((v, i) => [v, i === 0 && !small ? "10 · short trips" : String(v), C.axis])
+      : [[50, small ? "50" : "50 · harm likely", C.yellow], [200, small ? "200" : "200 · severe", C.amber], [600, small ? "600" : "600 · fatal", C.red]];
+    ctx.setLineDash([5, 5]); ctx.lineWidth = 1;
+    lines.forEach(([v, , col]) => { ctx.strokeStyle = col; ctx.globalAlpha = 0.7; const y = Math.round(Y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke(); });
+    ctx.globalAlpha = 1; ctx.setLineDash([]);
+
+    // fallout arrival
+    const xa = X(S.ta);
+    ctx.setLineDash([2, 4]); ctx.strokeStyle = C.out; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.moveTo(Math.round(xa) + 0.5, padT); ctx.lineTo(Math.round(xa) + 0.5, padT + ph); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+    // curves
+    const sh = shelter();
+    const t0 = Math.max(T_MIN, S.ta), N = 240;
+    const curve = (fn, color, w) => {
+      ctx.beginPath(); ctx.lineWidth = w; ctx.strokeStyle = color; ctx.lineJoin = "round";
+      for (let i = 0; i <= N; i++) { const t = t0 * Math.pow(T_MAX / t0, i / N); const x = X(t), y = Y(fn(t)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.stroke();
+    };
+    const fOut = rate ? rateOut : doseTo;
+    curve(fOut, C.out, 2.5);
+    if (sh.pf > 1) curve(t => fOut(t) / sh.pf, C.inn, 2.5);
+
+    // now marker
+    const xn = X(S.t);
+    ctx.strokeStyle = C.now; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(xn, padT); ctx.lineTo(xn, padT + ph); ctx.stroke();
+    if (S.t >= S.ta) {
+      const dot = (v, col) => { ctx.beginPath(); ctx.arc(xn, Y(v), 5, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.plot; ctx.stroke(); };
+      dot(fOut(S.t), C.out);
+      if (sh.pf > 1) dot(fOut(S.t) / sh.pf, C.inn);
+    }
+    ctx.restore();
+
+    // labels drawn outside the clip so they never get cut
+    lines.forEach(([v, text, col]) => { const y = Y(v); if (y > padT + 8 && y < padT + ph) label(text, padL + pw - 6, y - 3, col, "right", "bottom", fs); });
+    label("fallout arrives", xa + (xa > padL + pw * 0.7 ? -5 : 5), padT + 4, C.out, xa > padL + pw * 0.7 ? "right" : "left", "top", fs);
+    label("T+ " + fmtH(S.t), xn + (xn > padL + pw * 0.75 ? -6 : 6), padT + ph - 6, C.now, xn > padL + pw * 0.75 ? "right" : "left", "bottom", fs);
+  }
+
+  const timeFromX = clientX => {
+    const r = cv.getBoundingClientRect();
+    const f = Math.min(1, Math.max(0, (clientX - r.left - L.padL) / L.pw));
+    return T_MIN * Math.pow(T_MAX / T_MIN, f);
+  };
+
+  // ================= UI =================
+  const chipEls = { r1: [], sh: [], trip: [] };
+  function chip(parent, group, i, html, onClick, extra) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip" + (extra ? " " + extra : ""); b.innerHTML = html; b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", onClick); parent.appendChild(b); chipEls[group][i] = b; return b;
+  }
+  function buildChips() {
+    PRESETS.forEach((p, i) => chip($("r1Chips"), "r1", i, `${p.name}<small>${p.sub}</small>`, () => { S.R1 = p.v; update(); }));
+    SHELTERS.forEach((s, i) => chip($("shChips"), "sh", i, `${esc(s.name)}<small>${esc(s.sub)} \u00B7 PF ${fmtPF(s.pf)}</small>`, () => { S.shelter = s.id; update(); }, s.fortes ? "wide" : ""));
+    TRIPS.forEach((tr, i) => chip($("tripChips"), "trip", i, esc(tr.name), () => { S.trip = tr.h; update(); }));
+  }
+  function syncChips() {
+    PRESETS.forEach((p, i) => chipEls.r1[i].setAttribute("aria-pressed", String(Math.abs(Math.log10(S.R1 / p.v)) < 0.001)));
+    SHELTERS.forEach((s, i) => chipEls.sh[i].setAttribute("aria-pressed", String(s.id === S.shelter)));
+    TRIPS.forEach((tr, i) => chipEls.trip[i].setAttribute("aria-pressed", String(tr.h === S.trip)));
+  }
+
+  function renderReadouts() {
+    const sh = shelter(), t = S.t, arrived = t >= S.ta;
+    const rOut = rateOut(t), dOut = doseTo(t);
+    $("clockTxt").textContent = "T+ " + fmtH(t);
+    $("clockOut").textContent = "T+ " + fmtH(t);
+    $("r-out").innerHTML = arrived ? `${fmtRate(rOut, true)}<small>rem/h</small>` : "Not yet";
+    $("r-out-s").textContent = arrived ? "Dose rate outdoors" : "Fallout lands at T+ " + fmtH(S.ta);
+    $("r-in").innerHTML = arrived ? `${fmtRate(rOut / sh.pf, true)}<small>rem/h</small>` : "Not yet";
+    $("r-in-s").textContent = sh.pf > 1 ? "Inside: PF " + fmtPF(sh.pf) : "No cover, same as outside";
+    $("r-do").innerHTML = `${fmtN(dOut)}<small>rem</small>`;
+    pillInto($("r-do-s"), dOut);
+    $("r-di").innerHTML = `${fmtN(dOut / sh.pf)}<small>rem</small>`;
+    pillInto($("r-di-s"), dOut / sh.pf);
+  }
+
+  function renderLegend() {
+    const sh = shelter();
+    const out = [`<div><i class="ln" style="background:${C.out}"></i><span>Outside, in the open</span></div>`];
+    if (sh.pf > 1) out.push(`<div><i class="ln" style="background:${C.inn}"></i><span>Inside: ${esc(sh.name)}</span></div>`);
+    out.push(`<div><i class="ln dash"></i><span>${S.tab === "rate" ? "Planning thresholds: 10, 1 and 0.1 rem/h" : "Harm thresholds: 50, 200 and 600 rem"}</span></div>`);
+    $("legend").innerHTML = out.join("");
+    $("chartTitle").textContent = S.tab === "rate" ? "Outdoor dose rate" : "Dose taken since fallout arrived";
+    const cvLabel = S.tab === "rate"
+      ? `Dose rate chart on log scales. ${fmtH(S.t)} after the blast the outdoor rate is ${S.t >= S.ta ? fmtRate(rateOut(S.t)) : "0"} rem per hour and the rate inside ${sh.name} is ${S.t >= S.ta ? fmtRate(rateOut(S.t) / sh.pf) : "0"} rem per hour.`
+      : `Dose taken chart on log scales. ${fmtH(S.t)} after the blast the dose in the open is ${fmtN(doseTo(S.t))} rem and the dose inside ${sh.name} is ${fmtN(doseTo(S.t) / sh.pf)} rem.`;
+    cv.setAttribute("aria-label", cvLabel);
+  }
+
+  function renderTrip() {
+    const d = S.trip, t = S.t, dose = doseBetween(t, t + d);
+    const lvl = doseLevel(dose), under = tripUnder(TRIP_LIMIT, d);
+    const msg = t + d <= S.ta ? `Fallout has not landed yet, so a trip now collects nothing. It reaches you at T+ ${fmtH(S.ta)}.`
+      : lvl === "fatal" ? "A trip now would likely be fatal. Stay sealed."
+      : lvl === "severe" ? "A trip now means severe radiation sickness. Stay sealed."
+      : lvl === "injury" ? "Harm is likely. Wait for the rate to fall."
+      : dose > TRIP_LIMIT ? "Below the harm threshold, but above the 5 rem planning limit. Keep trips short and rare."
+      : "Within the 5 rem planning limit. Cover skin, keep it short, and brush off dust before coming back in.";
+    $("tripV").innerHTML = `${esc(fmtN(dose))} <small>rem in the open</small>`;
+    $("tripPill").innerHTML = pill(dose);
+    $("tripAt").textContent = "T+ " + fmtH(t);
+    $("tripRate").innerHTML = (t >= S.ta ? fmtRate(rateOut(t), true) : "0") + " rem/h";
+    $("tripUnder").textContent = isFinite(under) ? "T+ " + fmtH(under) : "over 100 days";
+    $("tripMsg").textContent = msg;
+  }
+
+  function renderMiles() {
+    const rows = RATE_LINES.map(r => {
+      const tt = tBelow(r), trip = doseBetween(tt, tt + 1);
+      const desc = r === 10 ? "Short essential trips only" : r === 1 ? "Longer outings, with care" : "Close to normal activity";
+      const early = S.R1 * Math.pow(S.ta, -1.2) <= r ? " Already under this when fallout lands." : "";
+      return `<li><span>Outside rate under ${r} rem/h<small>${desc}. A 1 hour trip then costs about ${fmtN(trip)} rem.${early}</small></span><b>T+ ${fmtH(tt)}</b></li>`;
+    }).join("");
+    $("miles").innerHTML = `<h3>When you can come out</h3>
+      <ul>${rows}</ul>
+      <p>The 7&ndash;10 rule: every time you wait 7 times longer, the radiation drops 10 times. 1 hour, 7 hours, 2 days, 2 weeks, 3 months. The first two days are the dangerous ones.</p>
+      <p>Official guidance is to stay in for at least 24 hours and listen for instructions from local authorities.</p>`;
+  }
+
+  function renderCompare() {
+    const head = `<thead><tr><th>Where you wait</th><th>2 days<br>(rem)</th><th>2 weeks<br>(rem)</th><th>Outcome</th></tr></thead>`;
+    const d48 = doseTo(48), d336 = doseTo(336);
+    const body = SHELTERS.map(s => `<tr class="${s.fortes ? "fortes " : ""}${s.id === S.shelter ? "sel" : ""}"><td>${esc(s.name)}<small>PF ${fmtPF(s.pf)}</small></td><td>${esc(fmtN(d48 / s.pf))}</td><td>${esc(fmtN(d336 / s.pf))}</td><td>${pill(d336 / s.pf)}</td></tr>`).join("");
+    $("cmp").innerHTML = head + `<tbody>${body}</tbody>`;
+    $("cmpNote").innerHTML = "Dose is counted from the moment fallout arrives, with the settings above. A metre or two of earth already cuts fallout radiation hundreds of times, so past that point depth is not what protects you from fallout. The entrance and the air supply are. Depth earns its place against blast and a direct hit.";
+  }
+
+  function syncControls() {
+    $("r1").value = logTo(S.R1, R_MIN, R_MAX);
+    $("r1Out").textContent = fmtN(S.R1) + " rem/h";
+    $("ta").value = logTo(S.ta, TA_MIN, TA_MAX);
+    $("taOut").textContent = "T+ " + fmtH(S.ta);
+    $("clock").value = logTo(S.t, T_MIN, T_MAX);
+    $("shHint").textContent = shelter().fortes ? "Fallout protection stops improving after a few metres of earth. Fortes depth is about blast, ground shock and direct hits." : "Protection factor (PF) is how many times smaller the dose is than in the open.";
+    $("tab-rate").setAttribute("aria-pressed", String(S.tab === "rate"));
+    $("tab-dose").setAttribute("aria-pressed", String(S.tab === "dose"));
+    const p = $("play"); p.textContent = S.playing ? "Pause" : "Play"; p.setAttribute("aria-pressed", String(S.playing));
+  }
+
+  function update() {
+    if (S.t < T_MIN) S.t = T_MIN; if (S.t > T_MAX) S.t = T_MAX;
+    const keep = document.activeElement;
+    syncChips(); syncControls(); renderReadouts(); renderLegend(); renderTrip(); renderMiles(); renderCompare(); draw();
+    if (keep && keep !== document.activeElement && document.contains(keep)) keep.focus({ preventScroll: true });
+  }
+  function updateClockOnly() {
+    $("clock").value = logTo(S.t, T_MIN, T_MAX);
+    renderReadouts(); renderLegend(); renderTrip(); draw();
+  }
+
+  // ================= events =================
+  $("r1").addEventListener("input", e => {
+    let v = logFrom(+e.target.value, R_MIN, R_MAX);
+    const near = PRESETS.find(p => Math.abs(Math.log10(v / p.v)) < 0.004);
+    S.R1 = near ? near.v : v; update();
+  });
+  $("ta").addEventListener("input", e => { S.ta = logFrom(+e.target.value, TA_MIN, TA_MAX); update(); });
+  $("clock").addEventListener("input", e => { stop(); S.t = logFrom(+e.target.value, T_MIN, T_MAX); renderReadouts(); renderLegend(); renderTrip(); draw(); });
+  ["rate", "dose"].forEach(k => $("tab-" + k).addEventListener("click", () => { S.tab = k; update(); }));
+
+  let dragging = false;
+  cv.addEventListener("pointerdown", e => { dragging = true; try { cv.setPointerCapture(e.pointerId); } catch (_) {} stop(); S.t = timeFromX(e.clientX); updateClockOnly(); });
+  cv.addEventListener("pointermove", e => { if (dragging) { S.t = timeFromX(e.clientX); updateClockOnly(); } });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => cv.addEventListener(ev, () => { dragging = false; }));
+
+  let raf = 0, last = 0;
+  function stop() { if (!S.playing) return; S.playing = false; cancelAnimationFrame(raf); syncControls(); }
+  function step(now) {
+    const dt = Math.min(now - last, 50); last = now;
+    const nt = S.t * Math.exp(Math.log(T_MAX / T_MIN) * dt / 14000);
+    if (nt >= T_MAX) { S.t = T_MAX; S.playing = false; updateClockOnly(); syncControls(); return; }
+    S.t = nt; updateClockOnly(); raf = requestAnimationFrame(step);
+  }
+  $("play").addEventListener("click", () => {
+    if (S.playing) { stop(); return; }
+    if (S.t >= T_MAX * 0.99) S.t = T_MIN;
+    S.playing = true; last = performance.now(); syncControls(); raf = requestAnimationFrame(step);
+  });
+
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(resize).observe(cv.parentElement);
+  window.addEventListener("resize", resize);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => draw()).catch(() => {});
+
+  buildChips(); update(); resize();
+})();
+</script>
+</body>
+</html>

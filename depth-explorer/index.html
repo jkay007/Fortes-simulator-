@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Depth Explorer</title>
+<meta name="description" content="Drop a ground burst on top of a shelter, then slide down through the earth. See the crater dig, where the damage zone ends, and how the three Fortes depths of 30, 50 and 100 metres fare.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Fortes bracket frame. Yield and depth controls left, the earth cutaway right (it leads on a phone), readout strip under it,
+   then the three Fortes depths, reference depths and a plain table of what depth does and does not do. Same dark look as the other Fortes tools. */
+:root {
+  --ink: #0f1526; --panel: #161d33; --line: #2a3350; --cream: #f3f0ea; --muted: #8f97ad; --plot: #0b1020;
+  --red: #ef4444; --red-t: #ff6b6b; --amber: #f5a524; --yellow: #e8d36a; --green: #3ecf8e;
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--ink); }
+body { color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: clamp(32px, 5vw, 56px); height: clamp(32px, 5vw, 56px); border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); flex: none; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(30px, 6vw, 64px); line-height: .98; margin: 18px 0 10px; text-wrap: balance; overflow-wrap: break-word; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 66ch; margin: 0 0 26px; font-size: 16px; }
+.grid { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); grid-template-areas: "controls stage"; gap: 28px; align-items: start; }
+.stage { grid-area: stage; display: grid; gap: 16px; min-width: 0; }
+.controls { grid-area: controls; display: grid; gap: 22px; min-width: 0; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "controls"; gap: 22px; } }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--red-t); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; text-align: right; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 10px 11px; min-height: 48px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+.chip:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--red-t); outline-offset: 2px; }
+input[type=range] { width: 100%; height: 36px; margin: 4px 0 0; accent-color: var(--red); background: transparent; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.btn { font-family: var(--f-display); text-transform: uppercase; font-size: 16px; letter-spacing: .04em; background: var(--red); color: var(--ink); border: 0; padding: 0 22px; min-height: 48px; cursor: pointer; border-radius: 2px; width: 100%; }
+.btn:hover { filter: brightness(1.08); }
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.clocktxt { color: var(--cream); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+.cutbox { min-width: 0; background: var(--plot); touch-action: pan-y; cursor: crosshair; user-select: none; -webkit-user-select: none; line-height: 0; }
+.cutbox svg { display: block; width: 100%; height: auto; }
+.sv text { font-family: var(--f-mono); }
+.sv .lbl { paint-order: stroke; stroke: #0b1020; stroke-width: 4px; stroke-linejoin: round; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.legend span { color: var(--muted); }
+.sw { width: 12px; height: 12px; flex: none; display: inline-block; border: 2px solid currentColor; }
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.readout > div { background: var(--ink); padding: 14px; min-width: 0; }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--red-t); }
+.readout .v { font-family: var(--f-display); font-size: clamp(20px, 2.6vw, 28px); font-variant-numeric: tabular-nums; margin-top: 4px; overflow-wrap: anywhere; line-height: 1.1; }
+.readout .v small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .04em; margin-left: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+@media (max-width: 900px) { .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; text-wrap: balance; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card.fortes { border-color: var(--red); background: color-mix(in srgb, var(--red) 6%, var(--ink)); }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--red-t); font-weight: 600; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; padding: 5px 9px; border: 1px solid currentColor; width: fit-content; max-width: 100%; text-align: left; }
+.pill::before { content: ""; width: 7px; height: 7px; background: currentColor; flex: none; }
+.st-fatal { color: var(--red-t); } .st-severe { color: var(--amber); } .st-safe { color: var(--green); } .st-mute { color: var(--muted); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li > span:first-child { color: var(--cream); min-width: 0; }
+.card li > span:first-child small { display: block; font-size: 12px; color: var(--muted); }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; flex: none; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.threats { list-style: none; margin: 0; padding: 0; }
+.threat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 11rem); gap: 6px 20px; border-top: 1px solid var(--line); padding: 12px 0; align-items: start; }
+.threat:last-child { border-bottom: 1px solid var(--line); }
+.threat .what { font-weight: 700; }
+.threat .stop { color: var(--muted); font-size: 14px; }
+.threat .pill { font-size: 10px; letter-spacing: .06em; padding: 4px 7px; }
+.thead { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--red-t); font-weight: 600; padding-bottom: 8px; }
+@media (max-width: 700px) { .threat { grid-template-columns: minmax(0, 1fr) auto; } .threat .stop { grid-column: 1 / -1; grid-row: 2; } .thead { display: none; } }
+.note { font-size: 13px; color: var(--muted); margin-top: 12px; max-width: 90ch; }
+.note a, .fine a { color: var(--cream); }
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+@media (max-width: 520px) { .chip { padding: 10px 9px; } .mapwrap { padding: 10px; } .card { padding: 14px; } }
+</style>
+</head>
+<body>
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Depth explorer</div>
+    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+  </div>
+  <h1>How deep is <em>deep enough?</em></h1>
+  <p class="lede">Drop a ground burst on top of a shelter and watch the crater dig. Slide down through the earth to see what each depth buys you, and how the three Fortes depths stand up to a direct hit.</p>
+
+  <div class="grid">
+    <section class="stage" aria-label="Earth cutaway">
+      <div class="mapwrap">
+        <div class="maphead"><span>Cutaway, ground burst directly overhead</span><span class="clocktxt" id="headTxt"></span></div>
+        <div class="cutbox" id="cutbox"></div>
+        <div class="legend">
+          <div style="color:var(--green)"><i class="sw"></i><span>Shelter outside the damage zone</span></div>
+          <div style="color:var(--red-t)"><i class="sw"></i><span>Shelter inside the damage zone</span></div>
+          <div style="color:var(--red-t)"><i class="sw" style="border-style:dashed"></i><span>Damage zone: twice the crater depth</span></div>
+        </div>
+        <p class="note" id="svNote" style="margin:0"></p>
+      </div>
+      <div class="readout">
+        <div><div class="k">Crater depth</div><div class="v" id="r-crater"></div><div class="s" id="r-crater-s"></div></div>
+        <div><div class="k">Damage zone to</div><div class="v" id="r-zone"></div><div class="s">Twice the crater depth</div></div>
+        <div><div class="k">Your shelter</div><div class="v" id="r-state"></div><div class="s" id="r-state-s"></div></div>
+        <div><div class="k">Direct hit survived to</div><div class="v" id="r-kill"></div><div class="s" id="r-kill-s"></div></div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <div>
+        <div class="label"><span>Ground burst yield</span><output id="ktOut" for="kt"></output></div>
+        <div class="chips" id="ktChips" role="group" aria-label="Yield presets"></div>
+        <input type="range" id="kt" min="0" max="1000" step="1" aria-label="Weapon yield">
+        <div class="hint">A ground burst digs the deepest crater, so it is the hard case for a shelter. It lands directly above the shelter.</div>
+      </div>
+      <div>
+        <div class="label"><span>Depth</span><output id="dOut" for="depth"></output></div>
+        <div class="chips" id="dChips" role="group" aria-label="Depth presets"></div>
+        <input type="range" id="depth" min="1" max="120" step="1" aria-label="Shelter depth in metres">
+        <div class="hint">Drag the slider, or click the cutaway. Fortes shelters are built 30, 50 or 100 metres down.</div>
+      </div>
+      <button type="button" class="btn" id="descend" aria-pressed="false">Descend</button>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="card fortes" id="c-fortes">
+      <h3>The three Fortes depths</h3>
+      <ul id="fortesList"></ul>
+      <p id="fortesNote"></p>
+    </div>
+    <div class="card" id="c-refs">
+      <h3>How deep is that?</h3>
+      <ul id="refList"></ul>
+      <p>Reference depths, to give the numbers a feel. They are real places, not shelters.</p>
+    </div>
+  </div>
+
+  <h2>What depth does, and what it doesn&rsquo;t</h2>
+  <div class="thead threat" aria-hidden="true"><span>Threat</span><span>What stops it</span><span>Does depth matter?</span></div>
+  <ul class="threats">
+    <li class="threat"><span class="what">Heat flash</span><span class="stop">Any covering of earth</span><span><span class="pill st-mute">Any depth works</span></span></li>
+    <li class="threat"><span class="what">Initial radiation</span><span class="stop">A few metres of earth</span><span><span class="pill st-severe">A little</span></span></li>
+    <li class="threat"><span class="what">Fallout radiation</span><span class="stop">Earth cover and the design of the entrance</span><span><span class="pill st-severe">Not past 2 m</span></span></li>
+    <li class="threat"><span class="what">Fallout in the air supply</span><span class="stop">NBC and CBRN air filtration</span><span><span class="pill st-mute">No</span></span></li>
+    <li class="threat"><span class="what">Cratering and ground shock</span><span class="stop">Sitting below the damage zone</span><span><span class="pill st-fatal">Decisive</span></span></li>
+    <li class="threat"><span class="what">Electromagnetic pulse</span><span class="stop">Faraday cage shielding</span><span><span class="pill st-mute">No</span></span></li>
+    <li class="threat"><span class="what">Months underground</span><span class="stop">Independent power, water purification and satellite communications</span><span><span class="pill st-mute">No</span></span></li>
+  </ul>
+  <p class="note">Depth is the one thing you cannot add later. Filtration, power and shielding can be upgraded, but the earth above the shelter is fixed on day one.</p>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Book a confidential consultation &rarr; <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Educational model only. Direct-hit survival uses Glasstone &amp; Dolan crater scaling for a ground burst directly above the shelter and treats twice the crater depth as the damage zone, the same rule as the Nuclear simulator. It ignores geology, burst height, the structure of the shelter, the entrance and anything off-axis, and real ground shock depends on the soil and rock at each site. The fallout protection factor uses a 12 cm halving thickness for earth and is capped at 100,000, as in the Nuclear simulator. Reference depths: <a href="https://en.wikipedia.org/wiki/Hampstead_tube_station" target="_blank" rel="noopener">Hampstead station</a>, 58.5 m, the deepest on the London Underground; <a href="https://worldatlas.com/articles/deepest-metro-stations-in-the-world.html" target="_blank" rel="noopener">Arsenalna station</a> in Kyiv, 105.5 m, listed as the deepest metro station in the world; basement depth is a typical figure. Systems named in the table are those listed at fortesbunkers.com. Depths, survivable yields and protection figures are illustrative, not a Fortes guarantee.</p>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // ================= model =================
+  const DMAX = 120;
+  const FORTES = [30, 50, 100];
+  const KT_MIN = 1, KT_MAX = 20000;
+  const PF_CAP = 1e5;
+  // Same Glasstone & Dolan crater scaling as the Nuclear simulator (ground burst): crater depth in metres, radius in metres.
+  // The damage zone is twice the crater depth, so a shelter at depth d survives while 2 * craterDepth(kt) <= d.
+  const craterDepth = kt => 9 * Math.pow(kt, 0.294);
+  const craterRadius = kt => 20 * Math.pow(kt, 0.3);
+  const killKt = d => Math.pow(d / 18, 1 / 0.294);
+  const earthPF = m => Math.min(PF_CAP, 2 * Math.pow(2, m / 0.12));
+  const PRESETS = [
+    { kt: 15, name: "15 kt", sub: "Hiroshima size" },
+    { kt: 100, name: "100 kt", sub: "Submarine warhead" },
+    { kt: 300, name: "300 kt", sub: "ICBM warhead" },
+    { kt: 1000, name: "1 Mt", sub: "Megaton" },
+    { kt: 5000, name: "5 Mt", sub: "Heavy strategic" },
+    { kt: 15000, name: "15 Mt", sub: "Castle Bravo size" },
+  ];
+  const D_CHIPS = [{ d: 3, name: "Basement", sub: "3 m" }, { d: 30, name: "Fortes", sub: "30 m" }, { d: 50, name: "Fortes", sub: "50 m" }, { d: 100, name: "Fortes", sub: "100 m" }];
+  const REFS = [
+    { short: "Basement", name: "A typical house basement", note: "", d: 3 },
+    { short: "Hampstead", name: "Hampstead station, London", note: " \u00B7 Deepest on the Underground", d: 58.5 },
+    { short: "Arsenalna", name: "Arsenalna station, Kyiv", note: " \u00B7 Listed as the deepest metro station", d: 105.5 },
+  ];
+  const S = { kt: 300, d: 100, descending: false };
+
+  // ================= formatting =================
+  const fmtM = m => (m < 10 ? m.toFixed(1) : Math.round(m).toLocaleString("en-GB")) + " m";
+  const fmtKt = k => k >= 1000 ? (k / 1000 >= 10 ? Math.round(k / 1000) : (k / 1000).toFixed(1).replace(/\.0$/, "")) + " Mt"
+    : k >= 100 ? Math.round(k / 5) * 5 + " kt" : k >= 10 ? Math.round(k) + " kt" : k >= 1 ? Math.round(k) + " kt"
+    : k >= 0.1 ? Math.round(k * 100) * 10 + " tons" : "under 100 tons";
+  const logTo = (v, a, b) => Math.round(1000 * Math.log(v / a) / Math.log(b / a));
+  const logFrom = (s, a, b) => a * Math.pow(b / a, s / 1000);
+  const fmtPF = pf => pf >= PF_CAP ? "100,000+" : Math.round(pf).toLocaleString("en-GB");
+  const intact = (d, kt) => d >= 2 * craterDepth(kt);
+  const pill = ok => ok ? `<span class="pill st-safe">Intact</span>` : `<span class="pill st-fatal">Damaged</span>`;
+
+  // ================= cutaway (SVG built at the real pixel width, so text stays readable on a phone) =================
+  const box = $("cutbox");
+  let lastW = 0;
+  let G = { y0: 70, k: 4, h: 600 };
+  const SKY = ["#19223c", 0.04, 22, 0.075, 34, 0.12, 16, 0.16, 40, 0.215, 24, 0.26, 30, 0.74, 28, 0.785, 18, 0.83, 38, 0.88, 22, 0.925, 32];
+
+  function render() {
+    const W = Math.floor(box.clientWidth) || 360;
+    lastW = W;
+    const small = W < 520, fs = small ? 10 : 11;
+    const H = small ? Math.round(Math.max(470, W * 1.45)) : 600;
+    const axisW = small ? 38 : 50, y0 = 74;
+    const x0 = axisW, x1 = W - 8, cw = x1 - x0, cx = x0 + cw / 2;
+    const k = (H - y0 - 14) / DMAX;
+    G = { y0, k, h: H };
+    const Dc = craterDepth(S.kt), dz = 2 * Dc, R = craterRadius(S.kt);
+    const kx = Math.min(k, 0.44 * cw / R), rx = R * kx;
+    const ok = intact(S.d, S.kt);
+    const exact = FORTES.includes(S.d);
+    const Y = d => y0 + d * k;
+    const o = [];
+    o.push(`<svg class="sv" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(`Cutaway. A ${fmtKt(S.kt)} ground burst digs a crater ${fmtM(Dc)} deep and damages the ground to ${fmtM(dz)}. A shelter ${S.d} metres down is ${ok ? "outside" : "inside"} the damage zone.`)}">`);
+    o.push(`<defs><linearGradient id="earthG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#40384c"/><stop offset="0.35" stop-color="#2a2f45"/><stop offset="1" stop-color="#10162a"/></linearGradient>
+      <clipPath id="earthClip"><rect x="${x0}" y="${y0}" width="${cw}" height="${H - y0}"/></clipPath></defs>`);
+    // sky and skyline
+    o.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="#0b1020"/>`);
+    for (let i = 1; i < SKY.length; i += 2) {
+      const bx = x0 + SKY[i] * cw, bh = SKY[i + 1], bw = Math.max(10, cw * 0.032);
+      if (Math.abs(bx + bw / 2 - cx) < rx + 6) continue;
+      o.push(`<rect x="${bx.toFixed(1)}" y="${y0 - bh}" width="${bw.toFixed(1)}" height="${bh}" fill="${SKY[0]}"/>`);
+    }
+    // earth with strata
+    o.push(`<rect x="${x0}" y="${y0}" width="${cw}" height="${H - y0}" fill="url(#earthG)"/>`);
+    [[6, 0.6], [17, 1.1], [33, 0.8], [58, 1.4], [84, 0.9]].forEach(([d, ph], j) => {
+      const pts = []; for (let i = 0; i <= 24; i++) { const x = x0 + cw * i / 24; pts.push(`${x.toFixed(1)},${(Y(d) + Math.sin(i * 0.9 + ph + j) * 2.2).toFixed(1)}`); }
+      o.push(`<polyline points="${pts.join(" ")}" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="1.5"/>`);
+    });
+    // damage zone, crater (clipped to the earth)
+    o.push(`<g clip-path="url(#earthClip)">`);
+    const rxd = rx * 1.3 + 8, ryd = dz * k, dpts = [];
+    for (let i = 0; i <= 64; i++) { const th = Math.PI * i / 64; dpts.push(`${(cx + rxd * Math.cos(th)).toFixed(1)},${(y0 + ryd * Math.sin(th)).toFixed(1)}`); }
+    o.push(`<polygon points="${dpts.join(" ")}" fill="#ef4444" fill-opacity="0.16" stroke="#ff6b6b" stroke-width="1.5" stroke-dasharray="6 5"/>`);
+    const cpts = []; for (let i = -40; i <= 40; i++) { const u = i / 40; cpts.push(`${(cx + u * rx).toFixed(1)},${(y0 + Dc * k * (1 - u * u)).toFixed(1)}`); }
+    o.push(`<polygon points="${(cx - rx).toFixed(1)},${y0 - 1} ${cpts.join(" ")} ${(cx + rx).toFixed(1)},${y0 - 1}" fill="#0b1020" stroke="#f3f0ea" stroke-width="1.5" stroke-opacity="0.85"/>`);
+    o.push(`</g>`);
+    o.push(`<line x1="${x0}" x2="${(cx - rx).toFixed(1)}" y1="${y0}" y2="${y0}" stroke="#f3f0ea" stroke-width="2"/><line x1="${(cx + rx).toFixed(1)}" x2="${x1}" y1="${y0}" y2="${y0}" stroke="#f3f0ea" stroke-width="2"/>`);
+    // ground zero marker
+    o.push(`<polygon points="${cx - 6},${y0 - 22} ${cx + 6},${y0 - 22} ${cx},${y0 - 11}" fill="#ef4444"/><text class="lbl" x="${cx}" y="${y0 - 28}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="#ff6b6b">GROUND ZERO</text>`);
+    // crater label and damage-zone line
+    if (Dc * k > 16 && Dc <= DMAX) o.push(`<text class="lbl" x="${cx}" y="${(y0 + Dc * k + 15).toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="#f3f0ea">crater ${fmtM(Dc)}</text>`);
+    if (dz <= DMAX) {
+      const yz = Y(dz);
+      o.push(`<line x1="${x0}" x2="${x1}" y1="${yz.toFixed(1)}" y2="${yz.toFixed(1)}" stroke="#ff6b6b" stroke-width="1.5" stroke-dasharray="6 5"/>`);
+      o.push(`<text class="lbl" x="${x1 - 6}" y="${(yz - 5).toFixed(1)}" text-anchor="end" font-size="${fs}" font-weight="600" fill="#ff6b6b">damage zone ends ${fmtM(dz)}</text>`);
+    } else {
+      o.push(`<text class="lbl" x="${cx}" y="${H - 8}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="#ff6b6b">damage zone runs past ${DMAX} m, to ${fmtM(dz)}</text>`);
+    }
+    // reference depths (right edge)
+    const yCap = Y(S.d);
+    REFS.forEach(r => {
+      const y = Y(r.d); if (y > H - 4) return;
+      o.push(`<line x1="${x1 - (small ? 44 : 60)}" x2="${x1}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#f3f0ea" stroke-opacity="0.45" stroke-width="1" stroke-dasharray="2 3"/>`);
+      if (Math.abs(y - yCap) > 20) o.push(`<text class="lbl" x="${x1 - 4}" y="${(y + 12).toFixed(1)}" text-anchor="end" font-size="${fs}" fill="#c9cde0">${r.short} ${r.d % 1 ? r.d.toFixed(1) : r.d} m</text>`);
+    });
+    // shelter capsule
+    const cwid = Math.min(small ? 108 : 150, cw * 0.5), chh = 24;
+    const col = ok ? "#3ecf8e" : "#ff6b6b", fill = ok ? "#0e2b22" : "#3a1519";
+    o.push(`<line x1="${x0}" x2="${(cx - cwid / 2).toFixed(1)}" y1="${yCap.toFixed(1)}" y2="${yCap.toFixed(1)}" stroke="#f3f0ea" stroke-opacity="0.5" stroke-dasharray="3 4"/>`);
+    o.push(`<rect x="${(cx - cwid / 2).toFixed(1)}" y="${(yCap - chh / 2).toFixed(1)}" width="${cwid.toFixed(1)}" height="${chh}" rx="${chh / 2}" fill="${fill}" stroke="${col}" stroke-width="2"/>`);
+    o.push(`<text x="${cx}" y="${(yCap + 4).toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="#f3f0ea">${exact ? "FORTES " : ""}${S.d} m</text>`);
+    // depth ruler
+    o.push(`<rect x="0" y="${y0}" width="${x0}" height="${H - y0}" fill="#0b1020"/><line x1="${x0 - 0.5}" x2="${x0 - 0.5}" y1="${y0}" y2="${H}" stroke="#2a3350"/>`);
+    for (let m = 0; m <= DMAX; m += 10) {
+      const y = Y(m), f = FORTES.includes(m);
+      o.push(`<line x1="${x0 - (f ? 8 : 5)}" x2="${x0}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${f ? "#ff6b6b" : "#8f97ad"}" stroke-width="${f ? 2 : 1}"/>`);
+      if (!small || m % 20 === 0 || f) if (Math.abs(y - yCap) > 12) o.push(`<text x="${x0 - 11}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="${fs}" fill="${f ? "#ff6b6b" : "#8f97ad"}" font-weight="${f ? 600 : 400}">${m}</text>`);
+    }
+    o.push(`<text x="${x0 - 11}" y="${y0 - 14}" text-anchor="end" font-size="${fs}" fill="#8f97ad">m</text>`);
+    o.push(`<rect x="1" y="${(yCap - 9).toFixed(1)}" width="${x0 - 5}" height="18" fill="#f3f0ea"/><text x="${(x0 - 5) / 2 + 1}" y="${(yCap + 4).toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="#0f1526">${S.d}</text>`);
+    o.push(`</svg>`);
+    box.innerHTML = o.join("");
+    $("svNote").textContent = [rx < R * k - 0.5 ? "Crater width is squeezed to fit; depth is to scale." : "", Dc > DMAX ? "The crater is deeper than this chart." : ""].filter(Boolean).join(" ");
+  }
+
+  // ================= UI =================
+  const chipEls = { kt: [], d: [] };
+  function chip(parent, group, i, html, onClick) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.innerHTML = html; b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", onClick); parent.appendChild(b); chipEls[group][i] = b;
+  }
+  function buildChips() {
+    PRESETS.forEach((p, i) => chip($("ktChips"), "kt", i, `${esc(p.name)}<small>${esc(p.sub)}</small>`, () => { stop(); S.kt = p.kt; update(); }));
+    D_CHIPS.forEach((c, i) => chip($("dChips"), "d", i, `${esc(c.name)}<small>${esc(c.sub)}</small>`, () => { stop(); S.d = c.d; update(); }));
+  }
+
+  function update() {
+    S.d = Math.min(DMAX, Math.max(1, Math.round(S.d)));
+    S.kt = Math.min(KT_MAX, Math.max(KT_MIN, S.kt));
+    const Dc = craterDepth(S.kt), dz = 2 * Dc, ok = intact(S.d, S.kt);
+    PRESETS.forEach((p, i) => chipEls.kt[i].setAttribute("aria-pressed", String(Math.abs(Math.log10(S.kt / p.kt)) < 0.001)));
+    D_CHIPS.forEach((c, i) => chipEls.d[i].setAttribute("aria-pressed", String(c.d === S.d)));
+    $("kt").value = logTo(S.kt, KT_MIN, KT_MAX); $("ktOut").textContent = fmtKt(S.kt);
+    $("depth").value = S.d; $("dOut").textContent = S.d + " m";
+    $("headTxt").textContent = `${fmtKt(S.kt)} at ${S.d} m`;
+    $("r-crater").textContent = fmtM(Dc); $("r-crater-s").textContent = "Ground burst, " + fmtKt(S.kt);
+    $("r-zone").textContent = fmtM(dz);
+    const st = $("r-state"); st.textContent = ok ? "Intact" : "Damaged"; st.style.color = ok ? "var(--green)" : "var(--red-t)";
+    $("r-state-s").textContent = `${S.d} m down, ${ok ? "outside" : "inside"} the damage zone`;
+    $("r-kill").textContent = "≈ " + fmtKt(killKt(S.d));
+    $("r-kill-s").textContent = `At ${S.d} m. Fallout PF ${fmtPF(earthPF(S.d))}`;
+    $("fortesList").innerHTML = FORTES.map(d => `<li><span>Fortes ${d} m<small>Direct hit survived to ≈ ${esc(fmtKt(killKt(d)))}</small></span>${pill(intact(d, S.kt))}</li>`).join("");
+    const nOk = FORTES.filter(d => intact(d, S.kt)).length;
+    $("fortesNote").textContent = nOk === 3 ? `A ${fmtKt(S.kt)} ground burst directly overhead leaves all three depths outside the damage zone.`
+      : nOk === 0 ? `A ${fmtKt(S.kt)} ground burst directly overhead digs below all three depths. Fortes shelters survive a direct hit up to about ${fmtKt(killKt(100))} at 100 m.`
+      : `A ${fmtKt(S.kt)} ground burst directly overhead reaches ${fmtM(dz)}. ${nOk === 1 ? "Only the deepest" : "The two deepest"} Fortes ${nOk === 1 ? "depth is" : "depths are"} below it.`;
+    $("refList").innerHTML = REFS.map(r => {
+      const diff = S.d - r.d, same = Math.abs(diff) < 0.05;
+      return `<li><span>${esc(r.name)}<small>${r.d % 1 ? r.d.toFixed(1) : r.d} m${esc(r.note)}</small></span><b>${same ? "same depth" : fmtM(Math.abs(diff)) + (diff > 0 ? " deeper" : " shallower")}</b></li>`;
+    }).join("");
+    const d = $("descend"); d.textContent = S.descending ? "Stop" : "Descend"; d.setAttribute("aria-pressed", String(S.descending));
+    render();
+  }
+
+  // ================= events =================
+  $("kt").addEventListener("input", e => {
+    stop();
+    const v = logFrom(+e.target.value, KT_MIN, KT_MAX);
+    const near = PRESETS.find(p => Math.abs(Math.log10(v / p.kt)) < 0.004);
+    S.kt = near ? near.kt : v; update();
+  });
+  $("depth").addEventListener("input", e => { stop(); S.d = +e.target.value; update(); });
+
+  const depthFromY = clientY => { const r = box.getBoundingClientRect(); return (clientY - r.top - G.y0) / G.k; };
+  let drag = false, start = null;
+  box.addEventListener("pointerdown", e => {
+    start = { x: e.clientX, y: e.clientY };
+    if (e.pointerType === "mouse") { drag = true; try { box.setPointerCapture(e.pointerId); } catch (_) {} stop(); S.d = depthFromY(e.clientY); update(); }
+  });
+  box.addEventListener("pointermove", e => { if (drag) { S.d = depthFromY(e.clientY); update(); } });
+  box.addEventListener("pointerup", e => {
+    if (!drag && e.pointerType !== "mouse" && start && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 8) { stop(); S.d = depthFromY(e.clientY); update(); }
+    drag = false;
+  });
+  ["pointercancel", "lostpointercapture"].forEach(ev => box.addEventListener(ev, () => { drag = false; }));
+
+  let raf = 0, t0 = 0, from = 3;
+  const TO = 100, DUR = 7000;
+  function stop() { if (!S.descending) return; S.descending = false; cancelAnimationFrame(raf); $("descend").textContent = "Descend"; $("descend").setAttribute("aria-pressed", "false"); }
+  function step(now) {
+    const f = Math.min(1, (now - t0) / DUR), e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+    S.d = from + (TO - from) * e;
+    if (f >= 1) { S.descending = false; S.d = TO; update(); return; }
+    update(); raf = requestAnimationFrame(step);
+  }
+  $("descend").addEventListener("click", () => {
+    if (S.descending) { stop(); return; }
+    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) { S.d = TO; update(); return; }
+    S.descending = true; from = 3; S.d = 3; t0 = performance.now(); raf = requestAnimationFrame(step);
+  });
+
+  const onSize = () => { const w = Math.floor(box.clientWidth); if (w && w !== lastW) render(); };
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(onSize).observe(box);
+  window.addEventListener("resize", onSize);
+  buildChips(); update();
+})();
+</script>
+</body>
+</html>
