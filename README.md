@@ -12,11 +12,11 @@ Five self-contained tools for Fortes underground bunkers. Each folder is one sta
 
 ## Blog
 
-`blog/` holds posts written for the Fortes Bunkers site, in Markdown with front matter (title, slug, date, excerpt, tool links). Figures in each post come from the tools' own models with their default settings.
+`blog/` holds copies of posts published on the Fortes Bunkers site, in Markdown with front matter. The live versions are TypeScript files in the site repo (`jkay007/fortes-bunker-web`, `src/content/`). Figures in each post come from the tools' own models with their default settings.
 
 | File | Post |
 | --- | --- |
-| `blog/2026-10-31-fallout-clock-and-depth-explorer.md` | Launch post for the Fallout Clock and the Depth Explorer. Links to them at `/simulators/fallout-clock` and `/simulators/depth-explorer` |
+| `blog/2026-10-31-fallout-clock-and-depth-explorer.md` | Launch post for the Fallout Clock and the Depth Explorer, at `/intelligence/fallout-clock-and-depth-explorer`. The tools are at `/simulators/fallout-clock` and `/simulators/depth-explorer` |
 
 ## Shelter depth
 
