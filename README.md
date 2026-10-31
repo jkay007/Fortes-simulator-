@@ -10,6 +10,14 @@ Five self-contained tools for Fortes underground bunkers. Each folder is one sta
 | `fallout-simulator` | Fallout Clock: how heavy and how soon, then run the clock to see when it is safe to come out, what a trip outside costs, and how five kinds of shelter compare |
 | `depth-explorer` | Depth Explorer: an earth cutaway with a ground-burst crater, the damage zone, and the three Fortes depths against a direct hit |
 
+## Blog
+
+`blog/` holds posts written for the Fortes Bunkers site, in Markdown with front matter (title, slug, date, excerpt, tool links). Figures in each post come from the tools' own models with their default settings.
+
+| File | Post |
+| --- | --- |
+| `blog/2026-10-31-fallout-clock-and-depth-explorer.md` | Launch post for the Fallout Clock and the Depth Explorer. Links to them at `/simulators/fallout-clock` and `/simulators/depth-explorer` |
+
 ## Shelter depth
 
 Fortes shelters are modelled at 30, 50 and 100 m. A shelter survives a direct hit from a ground burst when twice the crater depth (Glasstone & Dolan scaling) stays above the shelter depth. That is about 6 kt at 30 m, 30 kt at 50 m and 340 kt at 100 m. Fallout radiation halves with every 12 cm of earth in the model, capped at a protection factor of 100,000, so past about 2 m of earth the limit is the entrance and the air supply, not the rock. Depth matters most for cratering and ground shock.
