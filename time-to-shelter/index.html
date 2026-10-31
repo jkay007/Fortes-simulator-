@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Time to Shelter</title>
+<meta name="description" content="A missile's flight time is fixed. Set how fast the alert reaches you, how fast you get moving and how far you have to go, and see whether you are sealed inside before it lands.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Fortes bracket frame. Timeline and readout lead (first on a phone); controls sit left on desktop.
+   Below: how far a shelter can be for each way of travelling, then what to do if you will not make it. */
+:root {
+  --ink: #0f1526; --panel: #161d33; --line: #2a3350; --cream: #f3f0ea; --muted: #8f97ad; --plot: #0b1020;
+  --red: #ef4444; --red-t: #ff6b6b; --amber: #f5a524; --yellow: #e8d36a; --green: #3ecf8e; --blue: #5b9cf5; --violet: #b48cff;
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--ink); }
+body { color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; margin: 0; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: clamp(32px, 5vw, 56px); height: clamp(32px, 5vw, 56px); border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); flex: none; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(30px, 6vw, 64px); line-height: .98; margin: 18px 0 10px; text-wrap: balance; overflow-wrap: break-word; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 66ch; margin: 0 0 26px; font-size: 16px; }
+.grid { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); grid-template-areas: "controls stage"; gap: 28px; align-items: start; }
+.stage { grid-area: stage; display: grid; gap: 16px; min-width: 0; }
+.controls { grid-area: controls; display: grid; gap: 22px; min-width: 0; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "controls"; gap: 22px; } }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--red-t); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; text-align: right; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 10px 11px; min-height: 48px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+.chip:focus-visible, input:focus-visible { outline: 2px solid var(--red-t); outline-offset: 2px; }
+input[type=range] { width: 100%; height: 36px; margin: 4px 0 0; accent-color: var(--red); background: transparent; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 14px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+.say { font-family: var(--f-display); text-transform: uppercase; font-size: clamp(20px, 3vw, 30px); line-height: 1.05; text-wrap: balance; }
+.say.ok { color: var(--green); } .say.no { color: var(--red-t); }
+/* timeline */
+.tl { position: relative; background: var(--plot); padding: 14px 12px 8px; display: grid; gap: 10px; }
+.lane { display: grid; grid-template-columns: 74px minmax(0, 1fr); align-items: center; gap: 10px; }
+.lane > span { font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.track { position: relative; height: 34px; }
+.seg { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; padding: 0 6px; font-family: var(--f-mono); font-size: 11px; color: var(--ink); font-weight: 600; overflow: hidden; white-space: nowrap; min-width: 2px; }
+.seg.missile { background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--red) 55%, transparent) 0 6px, color-mix(in srgb, var(--red) 35%, transparent) 6px 12px); color: var(--cream); }
+.axis { position: relative; height: 18px; margin-left: 84px; }
+.axis i { position: absolute; top: 0; font-style: normal; font-family: var(--f-mono); font-size: 10px; color: var(--muted); transform: translateX(-50%); }
+.impact { position: absolute; top: 6px; bottom: 26px; width: 0; border-left: 2px solid var(--red); pointer-events: none; }
+.impact b { position: absolute; top: -2px; left: 6px; font-family: var(--f-mono); font-size: 10px; letter-spacing: .12em; color: var(--red-t); white-space: nowrap; }
+.impact.flip b { left: auto; right: 6px; }
+.late { position: absolute; top: 6px; bottom: 26px; background: color-mix(in srgb, var(--red) 10%, transparent); pointer-events: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
+.legend div { display: flex; gap: 8px; align-items: center; min-width: 0; color: var(--muted); }
+.legend b { font-family: var(--f-mono); font-weight: 600; font-size: 12px; color: var(--cream); }
+.sw { width: 12px; height: 12px; flex: none; display: inline-block; }
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.readout > div { background: var(--ink); padding: 14px; min-width: 0; }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--red-t); }
+.readout .v { font-family: var(--f-display); font-size: clamp(20px, 2.6vw, 28px); font-variant-numeric: tabular-nums; margin-top: 4px; overflow-wrap: anywhere; line-height: 1.1; }
+.readout .v small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .04em; margin-left: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.readout .ok { color: var(--green); } .readout .no { color: var(--red-t); }
+@media (max-width: 900px) { .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; text-wrap: balance; }
+/* reach bars */
+.reach { display: grid; gap: 10px; }
+.rrow { display: grid; grid-template-columns: minmax(0, 210px) minmax(0, 1fr) 92px; gap: 12px; align-items: center; }
+.rrow .n { font-size: 14px; min-width: 0; }
+.rrow .n small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.rbar { position: relative; height: 22px; background: var(--plot); }
+.rbar .fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--muted) 45%, transparent); }
+.rbar .fill.ok { background: color-mix(in srgb, var(--green) 70%, transparent); }
+.rbar .mark { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 2px dashed var(--cream); }
+.rrow .km { font-family: var(--f-mono); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rrow.sel .n { color: var(--cream); font-weight: 700; }
+@media (max-width: 620px) { .rrow { grid-template-columns: minmax(0, 1fr) 84px; } .rrow .rbar { grid-column: 1 / -1; grid-row: 2; } }
+.note { font-size: 13px; color: var(--muted); margin-top: 12px; max-width: 90ch; }
+.note a, .card p a { color: var(--cream); }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--red-t); font-weight: 600; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.card p b { color: var(--cream); }
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+.fine a { color: inherit; }
+@media (max-width: 520px) { .chip { padding: 10px 9px; } .mapwrap { padding: 10px; } .lane { grid-template-columns: 54px minmax(0, 1fr); gap: 8px; } .axis { margin-left: 62px; } .card { padding: 14px; } }
+</style>
+</head>
+<body>
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Time to shelter</div>
+    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+  </div>
+  <h1>Can you get there <em>in time?</em></h1>
+  <p class="lede">A missile's flight time is fixed. Everything else is up to you: how fast the alert reaches you, how fast you get moving and how far you have to go. Set them and see whether you are sealed inside before it lands, and how close a shelter has to be.</p>
+
+  <div class="grid">
+    <section class="stage" aria-label="Timeline from launch to impact">
+      <div class="mapwrap">
+        <div class="maphead"><span>Launch to impact</span><b id="headR"></b></div>
+        <div class="say" id="say" aria-live="polite"></div>
+        <div class="tl" id="tl" role="img" aria-label="Timeline">
+          <div class="lane"><span>Missile</span><div class="track" id="trM"></div></div>
+          <div class="lane"><span>You</span><div class="track" id="trY"></div></div>
+          <div class="axis" id="axis"></div>
+          <div class="late" id="late"></div>
+          <div class="impact" id="impact"><b>IMPACT</b></div>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="readout">
+        <div><div class="k">Missile lands</div><div class="v" id="r-t"></div><div class="s">after launch</div></div>
+        <div><div class="k">You are sealed in</div><div class="v" id="r-s"></div><div class="s">after launch</div></div>
+        <div><div class="k">Margin</div><div class="v" id="r-m"></div><div class="s" id="r-m-s"></div></div>
+        <div><div class="k">Furthest shelter</div><div class="v" id="r-f"></div><div class="s" id="r-f-s"></div></div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <div>
+        <div class="label"><span>Flight time</span><output id="tOut" for="t"></output></div>
+        <div class="chips" id="tChips" role="group" aria-label="Threat presets"></div>
+        <input type="range" id="t" min="2" max="40" step="1" aria-label="Missile flight time in minutes">
+        <div class="hint">Launch to impact. These are round figures; the real time depends on the missile and the distance it flies.</div>
+      </div>
+      <div>
+        <div class="label"><span>Alert reaches you after</span><output id="aOut" for="a"></output></div>
+        <input type="range" id="a" min="0" max="15" step="1" aria-label="Minutes from launch until the alert reaches you">
+        <div class="hint">Spotting the launch, deciding to warn the public and getting the alert to your phone all take time. No government publishes this figure.</div>
+      </div>
+      <div>
+        <div class="label"><span>Out of the door in</span><output id="rOut" for="r"></output></div>
+        <div class="chips" id="rChips" role="group" aria-label="Getting ready presets"></div>
+        <input type="range" id="r" min="0" max="20" step="1" aria-label="Minutes to get everyone out of the door">
+      </div>
+      <div>
+        <div class="label"><span>How you travel</span></div>
+        <div class="chips" id="vChips" role="group" aria-label="How you travel"></div>
+        <div class="hint">Average speeds, junctions and corners included. When an alert goes out, everyone else gets in their car too.</div>
+      </div>
+      <div>
+        <div class="label"><span>Shelter is</span><output id="dOut" for="d"></output></div>
+        <input type="range" id="d" min="0" max="1000" step="1" aria-label="Distance to the shelter in kilometres">
+      </div>
+      <div>
+        <div class="label"><span>Door to sealed</span><output id="sOut" for="s"></output></div>
+        <input type="range" id="s" min="1" max="10" step="1" aria-label="Minutes from reaching the door to being sealed inside">
+        <div class="hint">Opening up, getting everyone in, going down and closing the blast door behind you.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>How close does the shelter have to be?</h2>
+  <div class="reach" id="reach"></div>
+  <p class="note" id="reachNote"></p>
+
+  <div class="two">
+    <div class="card">
+      <h3>Minutes or days</h3>
+      <p>There are two kinds of warning. <b>Minutes</b> is a missile already in the air: only a shelter you can reach in that time counts, so it has to be close to where you live or work. <b>Days</b> is tension building in the news: distance hardly matters, because you travel early and stay. That is the case for <a href="https://fortesbunkers.com/fleet" target="_blank" rel="noopener">evacuation transport</a>, and for treating the move as planned rather than panicked.</p>
+    </div>
+    <div class="card">
+      <h3>If you will not make it</h3>
+      <p>Do not set off on a journey you cannot finish. Get inside the nearest solid building, go to the basement or the middle of it, away from windows, and stay there. Fallout takes time to arrive, so the first minutes indoors matter most. <a href="https://www.ready.gov/nuclear-explosion" target="_blank" rel="noopener">US guidance</a>: get inside, stay inside, stay tuned.</p>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Book a confidential consultation &rarr; <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Educational model only. Flight times are commonly quoted round figures: about 30 minutes for an intercontinental ballistic missile, and 10 to 15 minutes for a missile launched from a submarine close to the coast. The time an alert takes to reach the public is not published and will vary by country and by system, so it is yours to set. Travel uses steady average speeds and assumes the route is open; real traffic after an alert is unknown. The model ignores where the missile lands relative to you and the shelter. Choosing a site away from likely targets matters as much as reaching it: see the <a href="https://fortesbunkers.com/simulators/location-checker" target="_blank" rel="noopener">Location Risk Checker</a>. Not a FORTES guarantee. In an emergency, follow your local authorities.</p>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // ================= model =================
+  // Times in minutes from launch. Speeds in km/h.
+  const THREATS = [
+    { t: 30, name: "Intercontinental missile", sub: "About 30 min" },
+    { t: 12, name: "Submarine missile", sub: "Near the coast, 10-15 min" },
+  ];
+  const READY = [
+    { r: 2, name: "Bag by the door", sub: "2 min" },
+    { r: 5, name: "Family at home", sub: "5 min" },
+    { r: 10, name: "Asleep, children, older relatives", sub: "10 min", wide: true },
+  ];
+  const MODES = [
+    { id: "walk", v: 5, name: "Walking", sub: "5 km/h" },
+    { id: "bike", v: 15, name: "Cycling", sub: "15 km/h" },
+    { id: "car", v: 50, name: "Car, clear roads", sub: "50 km/h" },
+    { id: "jam", v: 15, name: "Car, everyone leaving", sub: "15 km/h" },
+  ];
+  const D_MAX = 60;                                     // km at the end of the slider
+  const dFromSlider = x => D_MAX * Math.pow(x / 1000, 2);
+  const sliderFromD = d => Math.round(1000 * Math.sqrt(d / D_MAX));
+
+  const S = { t: 30, a: 3, r: 5, mode: "car", d: 20, s: 3 };
+  const mode = () => MODES.find(m => m.id === S.mode);
+  const spare = () => S.t - S.a - S.r - S.s;            // minutes left for travelling
+  const reachKm = v => Math.max(0, spare()) * v / 60;
+
+  function run() {
+    const v = mode().v, leave = S.a + S.r, travel = S.d / v * 60, arrive = leave + travel, sealed = arrive + S.s;
+    let where = "";
+    if (sealed > S.t) {
+      if (S.t <= S.a) where = "The alert has not reached you when it lands.";
+      else if (S.t <= leave) where = "You are still at home getting ready when it lands.";
+      else if (S.t <= arrive) { const left = S.d - (S.t - leave) * v / 60; where = `You are still ${fmtKm(left)} from the shelter when it lands.`; }
+      else where = "You are at the door, but not yet sealed in, when it lands.";
+    }
+    return { leave, travel, arrive, sealed, margin: S.t - sealed, where };
+  }
+
+  // ================= formatting =================
+  const fmtMin = m => { const a = Math.abs(m); return a < 1 ? "under 1 min" : a < 99.5 ? Math.round(a) + " min" : (a / 60).toFixed(1) + " h"; };
+  const fmtKm = d => d < 1 ? Math.round(d * 1000 / 10) * 10 + " m" : d < 10 ? d.toFixed(1) + " km" : Math.round(d) + " km";
+
+  // ================= render =================
+  const COL = { alert: "var(--muted)", ready: "var(--amber)", travel: "var(--blue)", seal: "var(--violet)" };
+  function render() {
+    const R = run(), ok = R.margin >= 0;
+    $("tOut").textContent = S.t + " min";
+    $("aOut").textContent = S.a + " min";
+    $("rOut").textContent = S.r + " min";
+    $("sOut").textContent = S.s + " min";
+    $("dOut").textContent = S.d < 0.05 ? "where you are" : fmtKm(S.d) + " away";
+    $("headR").textContent = `${S.t} min flight · ${fmtKm(S.d)} by ${mode().name.toLowerCase()}`;
+    const say = $("say");
+    say.className = "say " + (ok ? "ok" : "no");
+    say.textContent = ok ? (R.margin < 0.5 ? "You make it, with seconds to spare." : `You make it, with ${fmtMin(R.margin)} to spare.`) : R.where;
+
+    // timeline, scaled so both the impact and your sealed time fit
+    const span = Math.max(S.t, R.sealed) * 1.06, pct = m => (100 * m / span).toFixed(3) + "%";
+    $("trM").innerHTML = `<div class="seg missile" style="left:0;width:${pct(S.t)}">In flight</div>`;
+    const segs = [["alert", 0, S.a, "Alert"], ["ready", S.a, R.leave, "Getting ready"], ["travel", R.leave, R.arrive, "Travelling"], ["seal", R.arrive, R.sealed, "Sealing"]];
+    const trackW = $("trY").offsetWidth;
+    $("trY").innerHTML = segs.filter(([, a, b]) => b > a).map(([k, a, b, n]) => {
+      const w = 100 * (b - a) / span, fits = trackW * w / 100 > n.length * 7.2 + 14;
+      return `<div class="seg" style="left:${pct(a)};width:${w.toFixed(3)}%;background:${COL[k]}" title="${n}: ${fmtMin(b - a)}">${fits ? n : ""}</div>`;
+    }).join("");
+    const step = span > 60 ? 15 : span > 25 ? 5 : 2, ticks = [];
+    for (let m = 0; m <= span; m += step) ticks.push(`<i style="left:${pct(m)}">${m}</i>`);
+    $("axis").innerHTML = ticks.join("");
+    // impact line and the late zone sit over the tracks, offset by the lane label column
+    const tl = $("tl"), lane = tl.querySelector(".track"), off = lane.offsetLeft, w = lane.offsetWidth;
+    $("impact").style.left = (off + w * S.t / span) + "px";
+    $("impact").classList.toggle("flip", S.t / span > 0.8);
+    const late = $("late");
+    late.hidden = ok;
+    if (!ok) { late.style.left = (off + w * S.t / span) + "px"; late.style.width = (w * (R.sealed - S.t) / span) + "px"; }
+    $("legend").innerHTML = segs.map(([k, a, b, n]) => `<div><i class="sw" style="background:${COL[k]}"></i>${n} <b>${fmtMin(b - a)}</b></div>`).join("");
+    tl.setAttribute("aria-label", `Timeline. The missile lands ${S.t} minutes after launch. You are sealed in ${Math.round(R.sealed)} minutes after launch. ${ok ? "You make it." : R.where}`);
+
+    $("r-t").innerHTML = `${S.t}<small>min</small>`;
+    $("r-s").innerHTML = `${R.sealed < 99.5 ? Math.round(R.sealed) : (R.sealed / 60).toFixed(1)}<small>${R.sealed < 99.5 ? "min" : "h"}</small>`;
+    $("r-m").className = "v " + (ok ? "ok" : "no");
+    $("r-m").textContent = (ok ? "+" : "−") + fmtMin(R.margin).replace("under ", "<");
+    $("r-m-s").textContent = ok ? "to spare" : "too late";
+    const maxD = reachKm(mode().v);
+    $("r-f").innerHTML = spare() <= 0 ? "None" : fmtKm(maxD).replace(/ (k?m)$/, "<small>$1</small>");
+    $("r-f-s").textContent = spare() <= 0 ? "no time left to travel" : "by " + mode().name.toLowerCase();
+
+    // reach bars
+    const top = Math.max(S.d, ...MODES.map(m => reachKm(m.v)), 1) * 1.08;
+    $("reach").innerHTML = MODES.map(m => {
+      const k = reachKm(m.v), good = k >= S.d;
+      return `<div class="rrow${m.id === S.mode ? " sel" : ""}"><div class="n">${esc(m.name)}<small>${m.sub}</small></div><div class="rbar"><div class="fill${good ? " ok" : ""}" style="width:${(100 * k / top).toFixed(2)}%"></div><div class="mark" style="left:${(100 * S.d / top).toFixed(2)}%" title="Your shelter"></div></div><div class="km">${spare() <= 0 ? "None" : fmtKm(k)}</div></div>`;
+    }).join("");
+    $("reachNote").textContent = spare() <= 0
+      ? `Waiting ${S.a} min for the alert, ${S.r} min to get moving and ${S.s} min to seal leaves no time to travel at all in a ${S.t}-minute flight. Only a shelter where you already are will do.`
+      : `With ${fmtMin(spare())} left for the journey, a shelter has to be within these distances. The dashed line is yours, ${fmtKm(S.d)} away. Green means you would make it.`;
+
+    $("t").value = S.t; $("a").value = S.a; $("r").value = S.r; $("s").value = S.s; $("d").value = sliderFromD(S.d);
+    document.querySelectorAll("#tChips .chip").forEach((c, i) => c.setAttribute("aria-pressed", THREATS[i].t === S.t));
+    document.querySelectorAll("#rChips .chip").forEach((c, i) => c.setAttribute("aria-pressed", READY[i].r === S.r));
+    document.querySelectorAll("#vChips .chip").forEach((c, i) => c.setAttribute("aria-pressed", MODES[i].id === S.mode));
+  }
+
+  // ================= wiring =================
+  function chip(host, html, onClick, wide) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.innerHTML = html; b.onclick = onClick;
+    if (wide) b.style.gridColumn = "1 / -1";
+    host.appendChild(b);
+  }
+  THREATS.forEach(x => chip($("tChips"), `${esc(x.name)}<small>${esc(x.sub)}</small>`, () => { S.t = x.t; render(); }));
+  READY.forEach(x => chip($("rChips"), `${esc(x.name)}<small>${esc(x.sub)}</small>`, () => { S.r = x.r; render(); }, x.wide));
+  MODES.forEach(x => chip($("vChips"), `${esc(x.name)}<small>${esc(x.sub)}</small>`, () => { S.mode = x.id; render(); }));
+  $("t").oninput = e => { S.t = +e.target.value; render(); };
+  $("a").oninput = e => { S.a = +e.target.value; render(); };
+  $("r").oninput = e => { S.r = +e.target.value; render(); };
+  $("s").oninput = e => { S.s = +e.target.value; render(); };
+  $("d").oninput = e => { const d = dFromSlider(+e.target.value); S.d = d < 10 ? Math.round(d * 10) / 10 : Math.round(d); render(); };
+  addEventListener("resize", render);
+  render();
+})();
+</script>
+</body>
+</html>

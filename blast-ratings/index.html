@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fortes Blast Ratings</title>
+<meta name="description" content="FORTES tiers are rated from 15 to 100 PSI. Pick a weapon and see how close it could land before the blast wave passes each rating, and what the same pressure does to the buildings around you.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Fortes bracket frame. Pressure chart and readout lead (first on a phone); controls sit left on desktop.
+   Below: closest landing per tier and weapon, then what a rating covers and the same pressure elsewhere. */
+:root {
+  --ink: #0f1526; --panel: #161d33; --line: #2a3350; --cream: #f3f0ea; --muted: #8f97ad; --plot: #0b1020;
+  --red: #ef4444; --red-t: #ff6b6b; --amber: #f5a524; --yellow: #e8d36a; --green: #3ecf8e;
+  --f-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--ink); }
+body { color: var(--cream); font-family: var(--f-body); font-size: 15px; line-height: 1.5; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; margin: 0; }
+.frame { position: relative; max-width: 1180px; margin: 0 auto; padding: 28px clamp(14px, 3vw, 44px) 32px; }
+.frame::before, .frame::after, .frame > .br-bl, .frame > .br-br { content: ""; position: absolute; width: clamp(32px, 5vw, 56px); height: clamp(32px, 5vw, 56px); border: 2px solid var(--red); pointer-events: none; }
+.frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.frame > .br-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.frame > .br-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: var(--red); flex: none; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.top .site { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+h1 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(30px, 6vw, 64px); line-height: .98; margin: 18px 0 10px; text-wrap: balance; overflow-wrap: break-word; }
+h1 em { font-style: normal; color: var(--red); }
+.lede { color: var(--muted); max-width: 66ch; margin: 0 0 26px; font-size: 16px; }
+.grid { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); grid-template-areas: "controls stage"; gap: 28px; align-items: start; }
+.stage { grid-area: stage; display: grid; gap: 16px; min-width: 0; }
+.controls { grid-area: controls; display: grid; gap: 22px; min-width: 0; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "controls"; gap: 22px; } }
+.label { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--red-t); margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+.label output { color: var(--cream); letter-spacing: .04em; text-align: right; }
+.chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.chip { font: 500 13px/1.25 var(--f-body); color: var(--cream); background: transparent; border: 1px solid var(--line); padding: 10px 11px; min-height: 48px; text-align: left; cursor: pointer; border-radius: 2px; }
+.chip small { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+.chip:focus-visible, input:focus-visible { outline: 2px solid var(--red-t); outline-offset: 2px; }
+.tiers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.tiers .chip:last-child { grid-column: 1 / -1; }
+input[type=range] { width: 100%; height: 36px; margin: 4px 0 0; accent-color: var(--red); background: transparent; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.mapwrap { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.maphead { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.maphead b { color: var(--cream); font-weight: 600; }
+canvas#chart { display: block; width: 100%; height: 360px; background: var(--plot); touch-action: pan-y; cursor: ew-resize; }
+.say { font-size: 14px; color: var(--muted); margin: 0; }
+.say b { color: var(--cream); }
+.readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.readout > div { background: var(--ink); padding: 14px; min-width: 0; }
+.readout .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--red-t); }
+.readout .v { font-family: var(--f-display); font-size: clamp(20px, 2.6vw, 28px); font-variant-numeric: tabular-nums; margin-top: 4px; overflow-wrap: anywhere; line-height: 1.1; }
+.readout .v small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .04em; margin-left: 4px; }
+.readout .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.ok { color: var(--green); } .no { color: var(--red-t); }
+@media (max-width: 900px) { .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+h2 { font-family: var(--f-display); font-weight: 400; text-transform: uppercase; font-size: clamp(22px, 3vw, 30px); margin: 40px 0 16px; line-height: 1; text-wrap: balance; }
+.tablewrap { overflow-x: auto; }
+.ladder { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ladder th { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--red-t); text-align: left; font-weight: 600; padding: 0 10px 8px 0; vertical-align: bottom; }
+.ladder th small { display: block; color: var(--muted); letter-spacing: .04em; text-transform: none; font-weight: 400; }
+.ladder td { border-top: 1px solid var(--line); padding: 10px 10px 10px 0; font-variant-numeric: tabular-nums; vertical-align: top; white-space: nowrap; }
+.ladder td:not(:first-child), .ladder th:not(:first-child) { text-align: right; font-family: var(--f-mono); }
+.ladder td:last-child, .ladder th:last-child { padding-right: 0; }
+.ladder td:first-child { color: var(--cream); }
+.ladder td:first-child small { display: block; color: var(--muted); font-family: var(--f-mono); font-size: 11px; }
+.ladder tr.sel td { background: color-mix(in srgb, var(--red) 7%, transparent); }
+.ladder tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--red); padding-left: 10px; }
+.ladder .cur { color: var(--cream); }
+.note { font-size: 13px; color: var(--muted); margin-top: 12px; max-width: 90ch; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card h3 { margin: 0; font-family: var(--f-mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--red-t); font-weight: 600; }
+.card p { margin: 0; font-size: 14px; color: var(--muted); }
+.card p a { color: var(--cream); }
+.card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.card li { display: flex; gap: 10px; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--line); padding-top: 8px; }
+.card li > span { color: var(--muted); min-width: 0; }
+.card li b { font-family: var(--f-mono); font-weight: 600; text-align: right; white-space: nowrap; flex: none; }
+.cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cta .brand { font-family: var(--f-display); font-size: 28px; color: var(--red); display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.cta .brand small { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .22em; }
+.cta a { font-family: var(--f-mono); font-weight: 600; color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--red); }
+.fine { font-size: 12px; color: var(--muted); max-width: 90ch; margin-top: 18px; }
+.fine a { color: inherit; }
+@media (max-width: 520px) { .chip { padding: 10px 9px; } .mapwrap { padding: 10px; } canvas#chart { height: 320px; } .card { padding: 14px; } }
+</style>
+</head>
+<body>
+<div class="frame">
+  <span class="br-bl"></span><span class="br-br"></span>
+  <div class="top">
+    <div class="eyebrow">Blast ratings</div>
+    <div class="site">FORTES / UNDERGROUND BUNKERS</div>
+  </div>
+  <h1>15 to 100 PSI. <em>How close can it land?</em></h1>
+  <p class="lede">Every FORTES tier has a published blast rating, from 15 PSI for Starter up to 100 PSI for Elite. Pick a weapon and see how close it could land before the blast wave passes each rating, and what the same pressure does to the buildings around you.</p>
+
+  <div class="grid">
+    <section class="stage" aria-label="Blast pressure chart">
+      <div class="mapwrap">
+        <div class="maphead"><span>Peak blast pressure at the surface</span><b id="headR"></b></div>
+        <canvas id="chart" role="img" aria-label="Chart"></canvas>
+        <p class="say" id="say" aria-live="polite"></p>
+        <div>
+          <div class="label"><span>Distance from ground zero</span><output id="xOut" for="x"></output></div>
+          <input type="range" id="x" min="0" max="1000" step="1" aria-label="Distance from ground zero">
+        </div>
+      </div>
+      <div class="readout">
+        <div><div class="k">Pressure here</div><div class="v" id="r-p"></div><div class="s" id="r-p-s"></div></div>
+        <div><div class="k" id="r-t-k">Tier rating</div><div class="v" id="r-t"></div><div class="s" id="r-t-s"></div></div>
+        <div><div class="k">Closest it can land</div><div class="v" id="r-c"></div><div class="s" id="r-c-s"></div></div>
+        <div><div class="k">Ratings held here</div><div class="v" id="r-h"></div><div class="s">of the five tiers</div></div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <div>
+        <div class="label"><span>Weapon</span><output id="ktOut" for="kt"></output></div>
+        <div class="chips" id="ktChips" role="group" aria-label="Weapon presets"></div>
+        <input type="range" id="kt" min="0" max="1000" step="1" aria-label="Weapon yield">
+      </div>
+      <div>
+        <div class="label"><span>Burst</span></div>
+        <div class="chips" id="bChips" role="group" aria-label="Burst type"></div>
+        <div class="hint" id="bHint"></div>
+      </div>
+      <div>
+        <div class="label"><span>FORTES tier</span></div>
+        <div class="tiers" id="tChips" role="group" aria-label="FORTES tier"></div>
+        <div class="hint">Published ratings, subject to final site engineering.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>How close each weapon can land</h2>
+  <div class="tablewrap"><table class="ladder" id="cmp"></table></div>
+  <p class="note" id="cmpNote"></p>
+
+  <div class="two">
+    <div class="card">
+      <h3>What a rating covers</h3>
+      <p>A blast rating is the peak overpressure a structure is designed to take. The blast wave travels through the air, so for a deep shelter what meets it is everything at the surface: the entrance, the blast doors and the air intakes. The rooms below are protected by the earth above them, which is a separate question of depth and cratering. The <a href="https://fortesbunkers.com/simulators/depth-explorer" target="_blank" rel="noopener">Depth Explorer</a> covers that part.</p>
+    </div>
+    <div class="card">
+      <h3>The same pressure, elsewhere</h3>
+      <ul id="refs"></ul>
+      <p id="refNote"></p>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="brand">FORTES <small>UNDERGROUND BUNKERS</small></div>
+    <div>Book a confidential consultation &rarr; <a href="https://fortesbunkers.com" target="_blank" rel="noopener">fortesbunkers.com</a></div>
+  </div>
+  <p class="fine">Educational model only. Peak overpressure uses the same scaled curves as the FORTES Blast and Nuclear simulators: Glasstone &amp; Dolan surface-burst curves for a ground burst, and for an airburst a burst at the height that does the most damage, calibrated to the OTA report <a href="https://atomicarchive.com/resources/documents/effects/ota/chapter-2-2-2.html" target="_blank" rel="noopener">The Effects of Nuclear War</a> (1 Mt: 5 psi at 7.0 km, 1 psi at 18.6 km). In this model the airburst's pressure on the ground peaks at about 80 psi; a lower burst would push it higher. Real pressures depend on terrain, buildings and the exact height of the burst. Tier ratings, depths and names are the published FORTES figures; ratings are subject to final site engineering. Not a FORTES guarantee.</p>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // ================= model =================
+  // Peak overpressure vs scaled ground range Z = R_km / Y_kt^(1/3); same tables as the Blast and Nuclear simulators.
+  const TABLES = {
+    ground: { Z: [0.03, 0.06, 0.1, 0.15, 0.22, 0.32, 0.48, 0.65, 1.21, 2.0, 4.0, 10], P: [5000, 1200, 200, 60, 20, 10, 5, 3, 1, 0.5, 0.2, 0.06] },
+    air:    { Z: [0.03, 0.1, 0.18, 0.28, 0.45, 0.70, 0.95, 1.86, 3.0, 6.0, 15], P: [80, 60, 35, 20, 10, 5, 3, 1, 0.5, 0.2, 0.06] },
+  };
+  // Published FORTES tiers (mirror of src/data/bunkerTiers.ts on fortesbunkers.com).
+  const TIERS = [
+    { id: "starter", name: "Starter", psi: 15, label: "15 PSI", depth: "30 m", c: "#5b9cf5" },
+    { id: "origin", name: "Origin", psi: 25, label: "25 PSI", depth: "50 m", c: "#3ecf8e" },
+    { id: "core", name: "Core", psi: 50, label: "50 PSI", depth: "75 m", c: "#e8d36a" },
+    { id: "titan", name: "Titan", psi: 75, label: "75 PSI", depth: "100 m", c: "#f5a524" },
+    { id: "elite", name: "Elite", psi: 100, label: "Up to 100 PSI", depth: "100 m+", c: "#ff6b6b" },
+  ];
+  const WEAPONS = [
+    { kt: 15, name: "15 kt", sub: "Hiroshima size" },
+    { kt: 100, name: "100 kt", sub: "Submarine warhead" },
+    { kt: 300, name: "300 kt", sub: "ICBM warhead" },
+    { kt: 1000, name: "1 Mt", sub: "Megaton" },
+  ];
+  const REFS = [
+    { psi: 1, name: "Windows shatter" },
+    { psi: 5, name: "Most houses collapse" },
+    { psi: 20, name: "Concrete buildings destroyed" },
+  ];
+  const KT_MIN = 1, KT_MAX = 10000;
+  const ktFromSlider = x => KT_MIN * Math.pow(KT_MAX / KT_MIN, x / 1000);
+  const sliderFromKt = k => Math.round(1000 * Math.log(k / KT_MIN) / Math.log(KT_MAX / KT_MIN));
+
+  const S = { kt: 300, burst: "ground", tier: "elite", R: 1.2 };
+  const tier = () => TIERS.find(t => t.id === S.tier);
+
+  function psiAt(R, kt = S.kt, burst = S.burst) {
+    const { Z: OP_Z, P: OP_P } = TABLES[burst];
+    const Z = R / Math.cbrt(kt), n = OP_Z.length;
+    if (Z <= OP_Z[0]) return OP_P[0];
+    if (Z >= OP_Z[n - 1]) return OP_P[n - 1] * Math.pow(OP_Z[n - 1] / Z, 1.2);
+    for (let i = 0; i < n - 1; i++) if (Z <= OP_Z[i + 1]) {
+      const t = Math.log(Z / OP_Z[i]) / Math.log(OP_Z[i + 1] / OP_Z[i]);
+      return Math.exp(Math.log(OP_P[i]) + t * Math.log(OP_P[i + 1] / OP_P[i]));
+    }
+  }
+  // Distance at which the pressure falls to p; 0 when the curve never reaches p.
+  function radiusFor(p, kt = S.kt, burst = S.burst) {
+    let lo = 0.0005, hi = 2000;
+    if (psiAt(lo, kt, burst) < p) return 0;
+    for (let i = 0; i < 60; i++) { const m = Math.sqrt(lo * hi); psiAt(m, kt, burst) > p ? lo = m : hi = m; }
+    return lo;
+  }
+  const xRange = () => [Math.max(0.02, 0.03 * Math.cbrt(S.kt)), radiusFor(0.7) * 1.15];
+
+  // ================= formatting =================
+  const fmtKm = d => d < 1 ? Math.round(d * 1000 / 10) * 10 + " m" : d < 10 ? d.toFixed(1) + " km" : Math.round(d) + " km";
+  const fmtKmHtml = d => fmtKm(d).replace(/ (k?m)$/, "<small>$1</small>");
+  const fmtPsi = p => p >= 100 ? Math.round(p).toLocaleString("en-GB") : p >= 10 ? Math.round(p) : p >= 1 ? p.toFixed(1) : p.toFixed(2);
+  const fmtKt = k => k >= 1000 ? (k / 1000 >= 10 ? Math.round(k / 1000) : (k / 1000).toFixed(1).replace(/\.0$/, "")) + " Mt" : (k >= 100 ? Math.round(k / 5) * 5 : Math.round(k)) + " kt";
+  const effect = p => p >= 20 ? "Concrete buildings destroyed" : p >= 5 ? "Most houses collapse" : p >= 1 ? "Windows shatter" : "Minor damage";
+
+  // ================= chart =================
+  const cv = $("chart"), ctx = cv.getContext("2d");
+  const Y_MIN = 0.7, Y_MAX = 300;
+  let geo = null;
+  function draw() {
+    const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const narrow = W < 480, L = narrow ? 34 : 44, Rm = 12, T = 12, B = 30;
+    const [x0, x1] = xRange(), lx0 = Math.log10(x0), lx1 = Math.log10(x1), ly0 = Math.log10(Y_MIN), ly1 = Math.log10(Y_MAX);
+    const X = d => L + (W - L - Rm) * (Math.log10(d) - lx0) / (lx1 - lx0);
+    const Y = p => T + (H - T - B) * (1 - (Math.log10(p) - ly0) / (ly1 - ly0));
+    geo = { X, x0, x1, L, Rm, W };
+    ctx.font = "10px 'JetBrains Mono', monospace"; ctx.textBaseline = "middle";
+    // x grid
+    ctx.strokeStyle = "rgba(143,151,173,.14)"; ctx.fillStyle = "#8f97ad"; ctx.lineWidth = 1; ctx.textAlign = "center";
+    [0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50].filter(d => d >= x0 && d <= x1).forEach(d => {
+      ctx.beginPath(); ctx.moveTo(X(d), T); ctx.lineTo(X(d), H - B); ctx.stroke();
+      ctx.fillText(d < 1 ? d * 1000 + " m" : d + " km", X(d), H - B + 14);
+    });
+    // reference pressures, dashed grey
+    ctx.textAlign = "left";
+    REFS.filter(r => r.psi !== 20).forEach(r => {
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = "rgba(143,151,173,.5)";
+      ctx.beginPath(); ctx.moveTo(L, Y(r.psi)); ctx.lineTo(W - Rm, Y(r.psi)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = "#8f97ad"; ctx.fillText(`${r.psi} psi · ${narrow ? r.name.split(" ").slice(-1)[0] : r.name.toLowerCase()}`, L + 6, Y(r.psi) - 8);
+    });
+    // tier ratings
+    TIERS.forEach(t => {
+      const on = t.id === S.tier;
+      ctx.strokeStyle = t.c; ctx.globalAlpha = on ? 1 : 0.45; ctx.lineWidth = on ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(L, Y(t.psi)); ctx.lineTo(W - Rm, Y(t.psi)); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillStyle = t.c; ctx.textAlign = "right";
+      ctx.fillText(narrow ? t.name : `${t.name} ${t.psi}`, W - Rm - 4, Y(t.psi) - 7);
+      ctx.textAlign = "left";
+    });
+    ctx.lineWidth = 1;
+    // y axis labels
+    ctx.fillStyle = "#8f97ad"; ctx.textAlign = "right";
+    [1, 5, 15, 25, 50, 100].forEach(p => ctx.fillText(p, L - 6, Y(p)));
+    ctx.save(); ctx.translate(10, T + (H - T - B) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = "center"; ctx.fillText("psi", 0, 0); ctx.restore();
+    // pressure curve, clipped to the plot so it runs off the top close in
+    ctx.save(); ctx.beginPath(); ctx.rect(L, T, W - L - Rm, H - T - B); ctx.clip();
+    ctx.strokeStyle = "#f3f0ea"; ctx.lineWidth = 2.5; ctx.beginPath();
+    for (let i = 0; i <= 240; i++) { const d = Math.pow(10, lx0 + (lx1 - lx0) * i / 240), x = X(d), y = Y(psiAt(d)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke(); ctx.restore(); ctx.lineWidth = 1;
+    // selected tier crossing
+    const t = tier(), rc = radiusFor(t.psi);
+    if (rc > 0 && rc >= x0) {
+      ctx.strokeStyle = t.c; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(X(rc), Y(t.psi)); ctx.lineTo(X(rc), H - B); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = t.c; ctx.beginPath(); ctx.arc(X(rc), Y(t.psi), 5, 0, Math.PI * 2); ctx.fill();
+    }
+    // your distance
+    const xr = X(S.R), pr = psiAt(S.R);
+    ctx.strokeStyle = "rgba(243,240,234,.75)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(xr, T); ctx.lineTo(xr, H - B); ctx.stroke(); ctx.lineWidth = 1;
+    ctx.fillStyle = "#0b1020"; ctx.strokeStyle = "#f3f0ea"; ctx.lineWidth = 2;
+    const yr = Math.min(Math.max(Y(pr), T + 6), H - B - 6);
+    ctx.beginPath(); ctx.arc(xr, yr, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.lineWidth = 1;
+    const lab = `${fmtPsi(pr)} psi`; ctx.font = "600 11px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#f3f0ea"; ctx.textAlign = xr > W - 90 ? "right" : "left";
+    ctx.fillText(lab, xr + (xr > W - 90 ? -10 : 10), Math.max(T + 8, yr - 14));
+  }
+
+  // ================= render =================
+  function render() {
+    const [x0, x1] = xRange();
+    S.R = Math.min(Math.max(S.R, x0), x1);
+    const t = tier(), p = psiAt(S.R), rc = radiusFor(t.psi), holds = p <= t.psi;
+    $("ktOut").textContent = fmtKt(S.kt);
+    $("xOut").textContent = fmtKm(S.R);
+    $("headR").textContent = `${fmtKt(S.kt)} ${S.burst === "ground" ? "ground burst" : "airburst"}`;
+    $("bHint").textContent = S.burst === "ground"
+      ? "Bursting on the ground gives the highest pressures close in. It is the hard case for any rating."
+      : "Bursting high in the air spreads moderate pressure over a wider area, but the peak on the ground is lower.";
+    $("r-p").innerHTML = `${fmtPsi(p)}<small>psi</small>`;
+    $("r-p-s").textContent = effect(p);
+    $("r-t-k").textContent = t.name + " rating";
+    $("r-t").className = "v " + (holds ? "ok" : "no");
+    $("r-t").textContent = holds ? "Within" : "Over";
+    $("r-t-s").textContent = holds ? `${t.label} not passed here` : `${(p / t.psi).toFixed(p / t.psi < 10 ? 1 : 0)}× the ${t.psi} PSI rating`;
+    $("r-c").innerHTML = rc > 0 ? fmtKmHtml(rc) : "<small>not reached</small>";
+    $("r-c-s").textContent = rc > 0 ? `for ${t.name}, ${t.psi} PSI` : `${t.psi} PSI is not reached on the ground in this model`;
+    $("r-h").textContent = TIERS.filter(x => p <= x.psi).length;
+    $("say").innerHTML = rc > 0
+      ? `A ${esc(fmtKt(S.kt))} ${S.burst === "ground" ? "ground burst" : "airburst"} has to land within <b>${fmtKm(rc)}</b> to pass the ${esc(t.name)} rating of ${t.psi} PSI. Most houses collapse out to <b>${fmtKm(radiusFor(5))}</b>, ${(radiusFor(5) / rc).toFixed(1)} times as far.`
+      : `In this model a ${esc(fmtKt(S.kt))} airburst never reaches ${t.psi} PSI on the ground. Most houses are still down out to <b>${fmtKm(radiusFor(5))}</b>.`;
+    cv.setAttribute("aria-label", `Peak blast pressure against distance for a ${fmtKt(S.kt)} ${S.burst}burst. At ${fmtKm(S.R)} it is ${fmtPsi(p)} psi.`);
+
+    // closest landing table, current burst type
+    const cur = WEAPONS.find(w => w.kt === S.kt);
+    $("cmp").innerHTML = `<thead><tr><th>Tier<small>Rating · depth</small></th>${WEAPONS.map(w => `<th class="${w === cur ? "cur" : ""}">${w.name}<small>${w.sub}</small></th>`).join("")}</tr></thead><tbody>${TIERS.map(x => `<tr class="${x.id === S.tier ? "sel" : ""}"><td>FORTES ${x.name}<small>${x.label} · ${x.depth}</small></td>${WEAPONS.map(w => { const r = radiusFor(x.psi, w.kt); return `<td class="${w === cur ? "cur" : ""}">${r > 0 ? fmtKm(r) : "not reached"}</td>`; }).join("")}</tr>`).join("")}<tr><td>A typical house<small>Collapses at 5 psi</small></td>${WEAPONS.map(w => `<td class="${w === cur ? "cur" : ""}">${fmtKm(radiusFor(5, w.kt))}</td>`).join("")}</tr></tbody>`;
+    $("cmpNote").textContent = `How close each weapon can land, as a ${S.burst === "ground" ? "ground burst" : "airburst"}, before the blast wave at the surface passes each rating. Smaller is better: the higher the rating, the closer it can land.`;
+
+    $("refs").innerHTML = REFS.map(r => `<li><span>${r.name}</span><b>${r.psi} psi</b></li>`).join("") + `<li><span>FORTES ${esc(t.name)} rating</span><b>${esc(t.label)}</b></li>`;
+    $("refNote").textContent = `${t.name}'s ${t.psi} PSI is ${t.psi / 5} times the pressure that collapses most houses${t.psi >= 20 ? ` and ${t.psi / 20 === Math.round(t.psi / 20) ? t.psi / 20 : (t.psi / 20).toFixed(2).replace(/0$/, "")} times what destroys a concrete building` : ""}.`;
+
+    $("kt").value = sliderFromKt(S.kt);
+    $("x").value = Math.round(1000 * Math.log(S.R / x0) / Math.log(x1 / x0));
+    document.querySelectorAll("#ktChips .chip").forEach((c, i) => c.setAttribute("aria-pressed", WEAPONS[i].kt === S.kt));
+    document.querySelectorAll("#bChips .chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.b === S.burst));
+    document.querySelectorAll("#tChips .chip").forEach((c, i) => c.setAttribute("aria-pressed", TIERS[i].id === S.tier));
+    draw();
+  }
+
+  // ================= wiring =================
+  function chip(host, html, onClick) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.innerHTML = html; b.onclick = onClick; host.appendChild(b); return b;
+  }
+  WEAPONS.forEach(w => chip($("ktChips"), `${esc(w.name)}<small>${esc(w.sub)}</small>`, () => { S.kt = w.kt; render(); }));
+  [["ground", "Ground burst", "Hard case"], ["air", "Airburst", "Wider, lower peak"]].forEach(([k, n, sub]) => chip($("bChips"), `${n}<small>${sub}</small>`, () => { S.burst = k; render(); }).dataset.b = k);
+  TIERS.forEach(t => chip($("tChips"), `${t.name}<small>${esc(t.label)} · ${t.depth}</small>`, () => { S.tier = t.id; render(); }));
+  $("kt").oninput = e => { const k = ktFromSlider(+e.target.value); S.kt = k < 10 ? Math.round(k) : k < 1000 ? Math.round(k / 5) * 5 : Math.round(k / 100) * 100; render(); };
+  $("x").oninput = e => { const [x0, x1] = xRange(); S.R = x0 * Math.pow(x1 / x0, +e.target.value / 1000); render(); };
+  function fromPointer(ev) {
+    if (!geo) return;
+    const r = cv.getBoundingClientRect(), px = ev.clientX - r.left;
+    const f = (px - geo.L) / (geo.W - geo.L - geo.Rm);
+    S.R = Math.pow(10, Math.log10(geo.x0) + Math.min(1, Math.max(0, f)) * (Math.log10(geo.x1) - Math.log10(geo.x0)));
+    render();
+  }
+  let dragging = false;
+  cv.addEventListener("pointerdown", ev => { dragging = true; cv.setPointerCapture(ev.pointerId); fromPointer(ev); });
+  cv.addEventListener("pointermove", ev => { if (dragging) fromPointer(ev); });
+  cv.addEventListener("pointerup", () => dragging = false);
+  cv.addEventListener("pointercancel", () => dragging = false);
+  addEventListener("resize", draw);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  render();
+})();
+</script>
+</body>
+</html>

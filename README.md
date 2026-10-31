@@ -1,6 +1,6 @@
 # Fortes simulators
 
-Five self-contained tools for Fortes underground bunkers. Each folder is one static page (`index.html`) with inline CSS and JavaScript. The only external request is Google Fonts.
+Seven self-contained tools for Fortes underground bunkers. Each folder is one static page (`index.html`) with inline CSS and JavaScript. The only external request is Google Fonts.
 
 | Folder | What it shows |
 | --- | --- |
@@ -9,6 +9,8 @@ Five self-contained tools for Fortes underground bunkers. Each folder is one sta
 | `blast-simulator` | Blast, heat and radiation at a chosen distance, in the open, in a brick house and in a Fortes shelter |
 | `fallout-simulator` | Fallout Clock: how heavy and how soon, then run the clock to see when it is safe to come out, what a trip outside costs, and how five kinds of shelter compare |
 | `depth-explorer` | Depth Explorer: an earth cutaway with a ground-burst crater, the damage zone, and the three Fortes depths against a direct hit |
+| `time-to-shelter` | Time to Shelter: a missile's flight time against the alert, getting out of the door, travelling and sealing in, and how close a shelter has to be for each way of travelling |
+| `blast-ratings` | Blast Ratings: peak blast pressure against distance with the five FORTES tier ratings (15 to 100 PSI), and how close each weapon can land before each rating is passed |
 
 ## Blog
 
