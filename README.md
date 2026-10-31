@@ -19,6 +19,8 @@ Seven self-contained tools for Fortes underground bunkers. Each folder is one st
 | File | Post |
 | --- | --- |
 | `blog/2026-10-31-fallout-clock-and-depth-explorer.md` | Launch post for the Fallout Clock and the Depth Explorer, at `/intelligence/fallout-clock-and-depth-explorer`. The tools are at `/simulators/fallout-clock` and `/simulators/depth-explorer` |
+| `blog/2026-10-31-time-to-shelter.md` | Launch post for Time to Shelter, at `/intelligence/time-to-shelter-how-close-does-a-bunker-need-to-be` |
+| `blog/2026-10-31-blast-ratings-explained.md` | Launch post for Blast Ratings Explained, at `/intelligence/blast-ratings-explained-15-to-100-psi` |
 
 ## Shelter depth
 
